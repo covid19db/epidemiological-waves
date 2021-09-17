@@ -19,12 +19,29 @@ y_chr <- extra_df$countrycode
 y_pop <- extra_df %>% select(countrycode, population)
 
 
+## check that we are not missing the population for any of the countries we are
+## considering...
+##
+## We can get population estimates from OWID, but very similar values are
+## available from WorldOMeter (https://www.worldometers.info/).
+##
+## - GLP is Guadeloupe  400,013
+## - MTQ is Martinique  374,743
+## - MYT is Mayotte     279,507
+##
+y_pop[y_pop$countrycode == "GLP", "population"] <- 400013
+y_pop[y_pop$countrycode == "MTQ", "population"] <- 374743
+y_pop[y_pop$countrycode == "MYT", "population"] <- 279507
 
 if (any(is.na(y_pop$population))) {
-  stop("There appear to be some NA values in the population data frame...")
+  cat("There appear to be some NA values in the population data frame...\n")
+  for (ix in seq.int(nrow(y_pop))) {
+    if (is.na(y_pop[ix,"population"])) {
+      cat("\tmissing population for ", y_pop[ix,"countrycode"], "\n")
+    }
+  }
+  stop("Stopping because there is missing population data")
 }
-## y_chr <- extra_df %>% filter(not(is.na(population))) %>% extract2("countrycode")
-## y_pop <- extra_df %>% filter(not(is.na(population))) %>% select(countrycode, population)
 
 
 ## read in the time series of cases and deaths so we have the actual data to
