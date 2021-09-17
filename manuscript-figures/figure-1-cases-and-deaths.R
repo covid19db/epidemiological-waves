@@ -100,13 +100,14 @@ g <- ggplot(
   data = filter(aligned_df, countrycode != "USA", countrycode != "IND"),
   mapping = aes(x = num_aligned_date, y = value_per_10k, group = countrycode)
 ) +
-  geom_point(shape = 1) +
+  geom_point(shape = 1, alpha = 0.25) +
   geom_line(data = smooth_df, group = NA, colour = "#7a0177", size = 2) +
   facet_wrap(~variable,
              scales = "free_y",
              labeller = labeller(variable = facet_labels)) +
-  scale_y_sqrt() +
-  labs(y = "Days since epidemic threshold reached", x = "Per 10,000 people") +
+  scale_y_sqrt(n.breaks = 4) +
+  labs(y = "Per 10,000 people (square root scale)",
+       x = "Days since epidemic threshold reached") +
   theme_bw() +
   theme(
     strip.background = element_blank(),
