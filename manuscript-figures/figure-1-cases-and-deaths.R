@@ -6,15 +6,26 @@ library(scales)
 library(zoo)
 
 ## we make a collection of countries that we care about so we can subset by them
-## later.
-y_chr <- read.table(
+## later. We also need to extract the population of each of the countries so
+## that the time series values can be expressed as per capita.
+extra_df <- read.table(
   file = "data/2021-09-15/figure_1b.csv",
   header = TRUE,
   sep = ";",
   stringsAsFactors = FALSE
 ) %>%
-  filter(class == 4) %>%
-  use_series(countrycode)
+  filter(class == 4)
+y_chr <- extra_df$countrycode
+y_pop <- extra_df %>% select(countrycode, population)
+
+
+
+if (any(is.na(y_pop$population))) {
+  stop("There appear to be some NA values in the population data frame...")
+}
+## y_chr <- extra_df %>% filter(not(is.na(population))) %>% extract2("countrycode")
+## y_pop <- extra_df %>% filter(not(is.na(population))) %>% select(countrycode, population)
+
 
 ## read in the time series of cases and deaths so we have the actual data to
 ## plot.
@@ -40,7 +51,9 @@ t0_df <- read.table(
 min_num_date <- x$date %>% as.numeric() %>% min()
 aligned_df <- left_join(x = x, y = t0_df, by = "countrycode") %>%
   mutate(num_aligned_date = as.numeric(date) - days_to_t0 - min_num_date) %>%
-  filter(num_aligned_date >= 0)
+  filter(num_aligned_date >= 0) %>%
+  left_join(y = y_pop, by = "countrycode") %>%
+  mutate(value_per_10k = value / population * 1e4)
 
 
 facet_labels <- c(
@@ -50,27 +63,26 @@ facet_labels <- c(
 
 smooth_df_npd <- aligned_df %>%
   filter(variable == "new_per_day", countrycode != "USA", countrycode != "IND") %>%
-  group_by(date) %>%
-  summarise(mean_val = mean(value)) %>%
-  mutate(value = rollmedian(mean_val, 7, na.pad = TRUE), variable = "new_per_day")
+  group_by(num_aligned_date) %>%
+  summarise(mean_val = mean(value_per_10k)) %>%
+  mutate(value_per_10k = rollmedian(mean_val, 7, na.pad = TRUE), variable = "new_per_day")
 
 smooth_df_dpd <- aligned_df %>%
   filter(variable == "dead_per_day", countrycode != "USA", countrycode != "IND") %>%
-  group_by(date) %>%
-  summarise(mean_val = mean(value)) %>%
-  mutate(value = rollmedian(mean_val, 7, na.pad = TRUE), variable = "dead_per_day")
+  group_by(num_aligned_date) %>%
+  summarise(mean_val = mean(value_per_10k)) %>%
+  mutate(value_per_10k = rollmedian(mean_val, 7, na.pad = TRUE), variable = "dead_per_day")
 
 smooth_df <- rbind(smooth_df_npd, smooth_df_dpd)
 
 g <- ggplot(
   data = filter(aligned_df, countrycode != "USA", countrycode != "IND"),
-  mapping = aes(x = date, y = value, group = countrycode)
+  mapping = aes(x = num_aligned_date, y = value_per_10k, group = countrycode)
 ) +
   geom_point(shape = 1) +
   geom_line(data = smooth_df, group = NA, colour = "#7a0177", size = 2) +
   facet_wrap(~variable, scales = "free_y", labeller = labeller(variable = facet_labels)) +
   scale_y_sqrt() +
-  scale_x_date(labels = label_date_short()) +
   labs(y = NULL, x = NULL) +
   theme_bw() +
   theme(
