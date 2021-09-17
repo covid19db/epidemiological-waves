@@ -36,8 +36,8 @@ y_pop[y_pop$countrycode == "MYT", "population"] <- 279507
 if (any(is.na(y_pop$population))) {
   cat("There appear to be some NA values in the population data frame...\n")
   for (ix in seq.int(nrow(y_pop))) {
-    if (is.na(y_pop[ix,"population"])) {
-      cat("\tmissing population for ", y_pop[ix,"countrycode"], "\n")
+    if (is.na(y_pop[ix, "population"])) {
+      cat("\tmissing population for ", y_pop[ix, "countrycode"], "\n")
     }
   }
   stop("Stopping because there is missing population data")
@@ -65,7 +65,9 @@ t0_df <- read.table(
 ## convert the date to an integer and then subtract the number of days until the
 ## threshold value is reached. There is an extra offset there so that the
 ## resulting numbers start at zero.
-min_num_date <- x$date %>% as.numeric() %>% min()
+min_num_date <- x$date %>%
+  as.numeric() %>%
+  min()
 aligned_df <- left_join(x = x, y = t0_df, by = "countrycode") %>%
   mutate(num_aligned_date = as.numeric(date) - days_to_t0 - min_num_date) %>%
   filter(num_aligned_date >= 0) %>%
