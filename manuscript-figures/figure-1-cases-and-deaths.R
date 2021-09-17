@@ -64,7 +64,8 @@ t0_df <- read.table(
 
 ## convert the date to an integer and then subtract the number of days until the
 ## threshold value is reached. There is an extra offset there so that the
-## resulting numbers start at zero.
+## resulting numbers start at zero. This is also where we calculate the values
+## per 10k people.
 min_num_date <- x$date %>%
   as.numeric() %>%
   min()
@@ -72,7 +73,8 @@ aligned_df <- left_join(x = x, y = t0_df, by = "countrycode") %>%
   mutate(num_aligned_date = as.numeric(date) - days_to_t0 - min_num_date) %>%
   filter(num_aligned_date >= 0) %>%
   left_join(y = y_pop, by = "countrycode") %>%
-  mutate(value_per_10k = value / population * 1e4)
+  mutate(value_per_10k = value / population * 1e4) %>%
+  select(variable, countrycode, value_per_10k, num_aligned_date)
 
 
 facet_labels <- c(
@@ -100,9 +102,11 @@ g <- ggplot(
 ) +
   geom_point(shape = 1) +
   geom_line(data = smooth_df, group = NA, colour = "#7a0177", size = 2) +
-  facet_wrap(~variable, scales = "free_y", labeller = labeller(variable = facet_labels)) +
+  facet_wrap(~variable,
+             scales = "free_y",
+             labeller = labeller(variable = facet_labels)) +
   scale_y_sqrt() +
-  labs(y = NULL, x = NULL) +
+  labs(y = "Days since epidemic threshold reached", x = "Per 10,000 people") +
   theme_bw() +
   theme(
     strip.background = element_blank(),
