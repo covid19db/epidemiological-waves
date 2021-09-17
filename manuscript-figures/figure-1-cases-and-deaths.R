@@ -100,7 +100,7 @@ g <- ggplot(
   data = filter(aligned_df, countrycode != "USA", countrycode != "IND"),
   mapping = aes(x = num_aligned_date, y = value_per_10k, group = countrycode)
 ) +
-  geom_point(shape = 1, alpha = 0.25) +
+  geom_point(shape = 1, alpha = 0.1) +
   geom_line(data = smooth_df, group = NA, colour = "#7a0177", size = 2) +
   facet_wrap(~variable,
              scales = "free_y",
