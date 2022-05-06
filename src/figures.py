@@ -16,8 +16,7 @@ from epidemicwaveclassifier import EpidemicWaveClassifier
 class Figures:
     def __init__(self, config: Config, epi_panel: pd.core.frame.DataFrame,
                  data_provider: DataProvider, epi_classifier: EpidemicWaveClassifier ):
-        self.data_dir = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'data')
-        self.plot_dir = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'plots')
+        self.data_dir = config.data_path
         self.config = config
         self.data_provider = data_provider
         self.epi_panel = epi_panel
