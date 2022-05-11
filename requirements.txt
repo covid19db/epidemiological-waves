@@ -22,6 +22,7 @@ pandas-flavor==0.2.0
 patsy==0.5.1
 Pillow==8.2.0
 pingouin==0.3.12
+plotnine~=0.8.0
 psycopg2-binary==2.9.1
 pyparsing==2.4.7
 pyproj==3.1.0
@@ -40,4 +41,3 @@ tqdm==4.61.1
 urllib3==1.26.6
 xarray==0.18.2
 pytest
-
