@@ -18,10 +18,11 @@ import src.wavefinder as wf
 
 
 class ManuscriptFigures:
-    def __init__(self, config: Config, data: dict):
+    def __init__(self, config: Config, data_provider: DataProvider, data: dict):
         self.data_path = config.manuscript_figures_data_path
         self.output_path = os.path.join(self.data_path, "..", "output")
         self.data = data
+        self.data_provider = data_provider
         return
 
     def _figure1b(self):
@@ -154,10 +155,47 @@ class ManuscriptFigures:
         (cases, deaths) = self.data['GHA']
         wf.plot_peaks([cases, deaths], 'Figure 3', True, self.output_path)
 
+
+    def _figure4(self):
+        epi_table = self.data_provider.get_epi_table()
+
+        countries = ['ZMB', 'GBR', 'GHA', 'CRI']
+
+        for country in countries:
+
+            raw_cases = epi_table[epi_table['countrycode'] == country]['new_per_day']
+            raw_deaths = epi_table[epi_table['countrycode'] == country]['dead_per_day']
+            raw_data = [raw_cases, raw_deaths]
+
+            fig, axs = plt.subplots(nrows=2, ncols=1, sharex=True, figsize=(14, 7))
+
+            plt.suptitle(country)
+
+            for i, wavelist in enumerate(self.data[country]):
+
+                raw = raw_data[i].values
+
+                smoothed = wavelist.raw_data.values
+
+                peaks_and_troughs = wavelist.peaks_sub_c
+                peaks = peaks_and_troughs[peaks_and_troughs['peak_ind'] == 1]['location'].values
+
+                axs[i].set_xlabel(wavelist.series_name)
+                axs[i].plot(raw, color='lightgrey', zorder=0)
+                axs[i].plot(smoothed, color='black', zorder=1)
+                axs[i].scatter(peaks, smoothed[peaks.astype(int)], color='red', marker='o', zorder=2)
+
+            fig.tight_layout()
+
+            plt.savefig(os.path.join(self.output_path, f'4_{country}.png'))
+            plt.close('all')
+
     def main(self):
         # Figure 1a is a map - TODO
         self._figure1b()
         self._figure1c()
         # Figure 2 is a hand-drawn figure
         self._figure3()
+        # Figure 4 is looking a little out of alignment - TODO
+        self._figure4()
         return
