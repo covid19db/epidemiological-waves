@@ -16,6 +16,10 @@ if __name__ == '__main__':
     data_provider.fetch_data(use_cache=True)
     countries = data_provider.get_countries()
 
+    # collect some data for manuscript plots
+    countries_for_manuscript = ['ZMB', 'GHA', 'GBR', 'CRI']
+    manuscript_data = dict()
+
     epidemic_wave_classifier = EpidemicWaveClassifier(config, data_provider)
 
     t = tqdm(countries, desc='Finding peaks for all countries')
@@ -29,12 +33,8 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             exit()
 
-        if country == 'GHA':
-            figure_3 = (cases, deaths)
-            file = os.path.join(config.manuscript_figures_data_path, 'figure3.pkl')
-            with open('file', 'wb') as handle:
-                pickle.dump(figure_3, handle)
-                print(f'Data for Figure 3 written to {file}')
+        if country in countries_for_manuscript:
+            manuscript_data[country] = (cases, deaths)
 
     wave_analysis_panel = WaveAnalysisPanel(
         config, data_provider, epidemic_wave_classifier.summary_output).get_epi_panel()
@@ -43,5 +43,5 @@ if __name__ == '__main__':
     table_1.table_1()
     #figures = Figures(config, wave_analysis_panel, data_provider, epidemic_wave_classifier)
     #figures.main()
-    manuscript_figures = ManuscriptFigures(config)
+    manuscript_figures = ManuscriptFigures(config, manuscript_data)
     manuscript_figures.main()

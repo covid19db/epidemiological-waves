@@ -1,6 +1,4 @@
-import os
 import numpy as np
-import pandas as pd
 import geopandas as gpd
 import datetime
 import psycopg2
@@ -20,9 +18,10 @@ import src.wavefinder as wf
 
 
 class ManuscriptFigures:
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, data: dict):
         self.data_path = config.manuscript_figures_data_path
         self.output_path = os.path.join(self.data_path, "..", "output")
+        self.data = data
         return
 
     def _figure1b(self):
@@ -152,14 +151,13 @@ class ManuscriptFigures:
 
     def _figure3(self):
 
-        file = os.path.join(self.data_path, "figure3.pkl")
-        with open(file, 'rb') as handle:
-            (cases, deaths) = pickle.load(handle)
-
-        wf.plot_peaks([cases, deaths], 'Ghana', True, self.output_path)
+        (cases, deaths) = self.data['GHA']
+        wf.plot_peaks([cases, deaths], 'Figure 3', True, self.output_path)
 
     def main(self):
+        # Figure 1a is a map - TODO
         self._figure1b()
         self._figure1c()
+        # Figure 2 is a hand-drawn figure
         self._figure3()
         return
