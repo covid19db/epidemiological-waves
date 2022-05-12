@@ -49,5 +49,5 @@ class Table1:
                                 'population_density', 'gni_per_capita']].copy(),
                            field='stringency_response_time').to_csv(
             os.path.join(self.config.data_path, 'mann_whitney_si.csv'))
-        print('Done')
+        print('Table 1 generated')
         return data

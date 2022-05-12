@@ -80,7 +80,7 @@ class EpidemicWaveClassifier:
             summary.append(death_peak_data)
             continue
         self.deaths_summary_output[country] = summary
-        return cross_validated_cases
+        return case_wavelist, deaths_wavelist, cross_validated_cases
 
     def save_summary(self):
         json_data = dict({'data': []})
