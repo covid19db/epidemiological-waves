@@ -6,8 +6,7 @@ from data_provider import DataProvider
 from config import Config
 from waveanalysispanel import WaveAnalysisPanel
 from table_1 import Table1
-from figures import Figures
-from manuscriptfigures import ManuscriptFigures
+from manuscriptfigures.manuscriptfigures import ManuscriptFigures
 
 
 if __name__ == '__main__':
@@ -44,3 +43,5 @@ if __name__ == '__main__':
     table_1.table_1()
     #figures = Figures(config, wave_analysis_panel, data_provider, epidemic_wave_classifier)
     #figures.main()
+    manuscript_figures = ManuscriptFigures(config)
+    manuscript_figures.main()

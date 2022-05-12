@@ -39,7 +39,7 @@ class Config:
         self.plot_path = os.path.abspath(os.path.join(self.base_path, '../plots/algorithm_results'))
         self.data_path = os.path.abspath(os.path.join(self.base_path, '../data'))
         self.cache_path = os.path.abspath(os.path.join(self.base_path, '../cache'))
-        self.manuscript_figures_data_path = os.path.abspath(os.path.join(self.base_path, '../manuscript-figures/data'))
+        self.manuscript_figures_data_path = os.path.abspath(os.path.join(self.base_path, '../manuscriptfigures/data'))
 
     def prominence_thresholds(self, field):
         if field == 'new_per_day_smooth':

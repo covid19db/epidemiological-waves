@@ -1,0 +1,43 @@
+#+title: Figure 1
+
+To make these figures use the =run.sh= script, to remove old figures use
+=clean.sh= and if you want to avoid needing to install all the packages use the
+=shell.nix= file to create a suitable shell.
+
+** Figure 1 \(T_0\) Map
+
+#+ATTR_ORG: :width 600
+[[./output/png/figure-1-t0-map.png]]
+
+=figure-1-t0-map.R= produces a choropleth showing the \(T_0\) across the
+globe.
+
+** Figure 1 Cases And Deaths
+
+#+ATTR_ORG: :width 400
+[[./output/png/figure-1-cases-and-deaths.png]]
+
+=figure-1-cases-and-deaths.R= produces the time series of confirmed cases and
+deaths along with the LOESS smoothing.
+
+*IMPORTANT* The values from USA and India have been removed because they are
+effectively outliers.
+
+The smoothing is obtained by first taking the average of every countries values
+for each day and then running a 7-day rolling median over the resulting values
+to smooth out weekend effects.
+
+** Figure 1 \(T_0\) and GNI per capita
+
+#+ATTR_ORG: :width 200
+[[./output/png/figure-1-t0-and-gni.png]]
+
+=figure-1-t0-and-gni.R= produces the scatter plot looking at GNI per capita as a
+predictor of \(T_0\). The regression is a power law, but on the log-log scale it
+appears linear. There is a summary of the model fit in the file
+=output/txt/figure-1-t0-and-gni.txt= and the actual figure appears in
+=output/png/figure-1-t0-and-gni.png=. The outlier at 25 days is from China.
+
+#+BEGIN_SRC
+"CHN",15187.1541555233,25 
+#+END_SRC
