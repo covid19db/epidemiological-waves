@@ -11,7 +11,7 @@ FUNCTIONS
 
 from pandas import DataFrame, Series
 
-import wavefinder.utils.trough_finder as trough_finder
+from ..utils import trough_finder as trough_finder
 
 
 def run(raw_data: Series, input_data_df: DataFrame, prominence_threshold: float,

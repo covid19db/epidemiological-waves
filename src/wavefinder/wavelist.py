@@ -2,11 +2,11 @@ from __future__ import annotations
 from pandas import DataFrame, Series
 import numpy as np
 
-import wavefinder.subalgorithms.algorithm_init as algorithm_init
-import wavefinder.subalgorithms.algorithm_a as algorithm_a
-import wavefinder.subalgorithms.algorithm_b as algorithm_b
-import wavefinder.subalgorithms.algorithm_c_and_d as algorithm_c_and_d
-import wavefinder.utils.trough_finder as trough_finder
+from .subalgorithms import algorithm_init as algorithm_init
+from .subalgorithms import algorithm_a as algorithm_a
+from .subalgorithms import algorithm_b as algorithm_b
+from .subalgorithms import algorithm_c_and_d as algorithm_c_and_d
+from .utils import trough_finder as trough_finder
 
 
 class WaveList:

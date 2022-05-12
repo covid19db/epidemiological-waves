@@ -17,7 +17,7 @@ PACKAGE CONTENTS
     plot_cross_validator
 """
 
-from wavefinder.wavelist import WaveList
-from wavefinder.waveplotter import plot_peaks, plot_cross_validator
+from .wavelist import WaveList
+from .waveplotter import plot_peaks, plot_cross_validator
 
 __all__ = ['WaveList', 'plot_peaks', 'plot_cross_validator']

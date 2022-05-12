@@ -14,7 +14,7 @@ import numpy as np
 from pandas import Series, DataFrame
 from scipy.signal import find_peaks
 
-from wavefinder.utils.prominence_updater import ProminenceUpdater
+from ..utils.prominence_updater import ProminenceUpdater
 
 
 def init_peaks_and_troughs(data: Series) -> DataFrame:

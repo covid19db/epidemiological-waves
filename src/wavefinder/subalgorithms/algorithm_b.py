@@ -12,7 +12,7 @@ FUNCTIONS
 import numpy as np
 from pandas import DataFrame, Series
 
-from wavefinder.utils.prominence_updater import ProminenceUpdater
+from ..utils.prominence_updater import ProminenceUpdater
 
 
 def run(raw_data: Series, input_data_df: DataFrame,

@@ -13,7 +13,7 @@ FUNCTIONS
 import numpy as np
 from pandas import DataFrame
 
-from wavefinder.utils.prominence_updater import ProminenceUpdater
+from ..utils.prominence_updater import ProminenceUpdater
 
 
 def delete_pairs(data: DataFrame, t_sep_a: int) -> DataFrame:
