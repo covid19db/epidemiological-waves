@@ -1,14 +1,15 @@
 import numpy as np
 import geopandas as gpd
-import datetime
+from datetime import datetime
 import psycopg2
 import matplotlib.pyplot as plt
+from matplotlib import cm, colors
 import seaborn as sns
 from shapely import wkt
 from tqdm import tqdm
-from config import Config
-from data_provider import DataProvider
-from epidemicwaveclassifier import EpidemicWaveClassifier
+from src.config import Config
+from src.data_provider import DataProvider
+from src.epidemicwaveclassifier import EpidemicWaveClassifier
 import os
 import pandas as pd
 from plotnine import *
@@ -22,7 +23,7 @@ import src.wavefinder as wf
 class ManuscriptFigures:
     def __init__(self, config: Config, data_provider: DataProvider, data: dict):
         self.data_path = config.manuscript_figures_data_path
-        self.figure_5_data_path = config.data_path
+        self.figure_5_6_data_path = config.data_path
         self.output_path = os.path.join(self.data_path, "..", "output")
         self.data = data
         self.data_provider = data_provider
@@ -42,7 +43,7 @@ class ManuscriptFigures:
 
         # Original R code here, but I will just hard-code in what is used in manuscript
         # t0_breaks <- round(boxplot.stats(plot_sf$days_to_t0)$stats / 10) * 10
-        t0_breaks = [90,110,170,280]
+        t0_breaks = [90, 110, 170, 280]
 
         # generate map
         g = (ggplot() +
@@ -50,20 +51,21 @@ class ManuscriptFigures:
              scale_fill_continuous(breaks=t0_breaks) +
              labs(fill="Days until epidemic\nthreshold reached") +
              theme_void() +
-             theme(legend_box_background = element_rect(fill="white", colour="grey"),
-                   legend_box_margin = 2,
-                   legend_position = "left",
-                   legend_direction = "horizontal",
-                   legend_title = element_text(vjust=1.0, size=7),
-                   legend_key_height = 6)
+             theme(legend_box_background=element_rect(fill="white", colour="grey"),
+                   legend_box_margin=2,
+                   legend_position="left",
+                   legend_direction="horizontal",
+                   legend_title=element_text(vjust=1.0, size=7),
+                   legend_key_height=6)
              )
         # replaced scale_fill_fermenter(breaks=t0_breaks,type="seq",direction=-1,palette="RdPu")
         # with the scale_fill_continuous. This is not satisfactory and data need to be binned
         # legend_position was set to left instead of coordinates as it didn't seem to work
         # legend also unsatisfactory
+        # maybe some useful code for all this in R/generate_figure_1.R
 
         file = os.path.join(self.output_path, "1A.png")
-        g.save(filename=file, height=14.8*0.7, width=21, units="cm", dpi=500)
+        g.save(filename=file, height=14.8 * 0.7, width=21, units="cm", dpi=500)
 
     def _figure1b(self):
         # read in the GNI data
@@ -229,7 +231,7 @@ class ManuscriptFigures:
 
     def _figure5(self):
         # Read the data
-        file = os.path.join(self.figure_5_data_path, 'figure_2.csv')
+        file = os.path.join(self.figure_5_6_data_path, 'figure_2.csv')
         figure_5_data = pd.read_csv(file, header=0, na_values=["N/A", "NA", "#N/A", " ", "", "None"])
 
         # Cut the positive rate before April due to low denominator
@@ -251,7 +253,9 @@ class ManuscriptFigures:
             max_tests_a = figure_5_data.loc[figure_5_data['country'] == country, 'new_tests'].max()
             max_positive_rate_a = figure_5_data.loc[figure_5_data['country'] == country, 'positive_rate_smooth'].max()
             figure_5_data.loc[figure_5_data['country'] == country,
-                              'positive_rate_smooth_normalized'] = figure_5_data.loc[figure_5_data['country'] == country, 'positive_rate_smooth'] * (max_tests_a / max_positive_rate_a)
+                              'positive_rate_smooth_normalized'] = figure_5_data.loc[figure_5_data[
+                                                                                         'country'] == country, 'positive_rate_smooth'] * (
+                                                                               max_tests_a / max_positive_rate_a)
 
         # Define which countries to plot
         country_list = ["Italy", "United States"]
@@ -262,51 +266,51 @@ class ManuscriptFigures:
         my_palette_3 = brewer_pal(palette="Oranges")(4)[3]
 
         # Store plots in a 3 x len(country_list) array
-        g = [[],[],[]]
+        g = [[], [], []]
 
         for j, country_a in enumerate(country_list):
             country_data = figure_5_data[figure_5_data['country'] == country_a]
 
             # Row 1: cases per day
             g0 = (ggplot(country_data)
-                            + geom_line(aes(x='date', y='new_per_day'), group=1, size=0.3, color=my_palette_1, na_rm=True)
-                            + geom_line(aes(x='date', y='new_per_day_smooth'), group=1, color=my_palette_2, na_rm=True)
-                            + labs(title=country_a, y="New Cases per Day", x=element_blank())
-                            + theme_classic(base_size=8, base_family='serif')
-                            + scale_y_continuous(expand=[0, 0], limits=[0, np.nan])
-                            + theme(plot_title=element_text(size=8, hjust=0.5)))
+                  + geom_line(aes(x='date', y='new_per_day'), group=1, size=0.3, color=my_palette_1, na_rm=True)
+                  + geom_line(aes(x='date', y='new_per_day_smooth'), group=1, color=my_palette_2, na_rm=True)
+                  + labs(title=country_a, y="New Cases per Day", x=element_blank())
+                  + theme_classic(base_size=8, base_family='serif')
+                  + scale_y_continuous(expand=[0, 0], limits=[0, np.nan])
+                  + theme(plot_title=element_text(size=8, hjust=0.5)))
             # removed 'plot_margin=unit([0, 0, 0, 0], "pt")' from theme, not sure what it should be in plotnine
-            #figure_5_a._draw_using_figure(fig, axs[0,j])
+            # figure_5_a._draw_using_figure(fig, axs[0,j])
             g[0].append(g0)
 
             # Row 2: Deaths per day with CFR
             # seems like we will need to do some trick with the twinx feature of matplotlib
             g1 = (ggplot(country_data)
-                            + geom_line(aes(x='date', y='dead_per_day'), group=1, size=0.3, color=my_palette_1, na_rm=True)
-                            + geom_line(aes(x='date', y='dead_per_day_smooth'), group=1, color=my_palette_2, na_rm=True)
-                            + geom_line(aes(x='date', y='cfr_smooth_normalized'), group=1, color=my_palette_3,
-                                        na_rm=True)
-                            + scale_y_continuous(name="Deaths per Day", expand=[0, 0], limits=[0, np.nan])
-                            + theme(plot_title=element_text(hjust=0.5))
-                            + theme_classic(base_size=8, base_family='serif')
-                            + theme(plot_title=element_text(hjust=0.5), axis_title_y=element_text(color=my_palette_2)))
+                  + geom_line(aes(x='date', y='dead_per_day'), group=1, size=0.3, color=my_palette_1, na_rm=True)
+                  + geom_line(aes(x='date', y='dead_per_day_smooth'), group=1, color=my_palette_2, na_rm=True)
+                  + geom_line(aes(x='date', y='cfr_smooth_normalized'), group=1, color=my_palette_3,
+                              na_rm=True)
+                  + scale_y_continuous(name="Deaths per Day", expand=[0, 0], limits=[0, np.nan])
+                  + theme(plot_title=element_text(hjust=0.5))
+                  + theme_classic(base_size=8, base_family='serif')
+                  + theme(plot_title=element_text(hjust=0.5), axis_title_y=element_text(color=my_palette_2)))
             # removed 'plot_margin=unit([0, 0, 0, 0], "pt")' from both themes, not sure what it should be in plotnine
             # should be an argument in scale_y_continuous:
             # sec.axis = sec_axis(~. / (max_dead_a / max_cfr_a), name = "Case Fatality Rate")
             # similarly had to drop axis_title_y_right and rename axis_title_y_left as axis_title_y
-            #figure_5_b._draw_using_figure(fig, axs[1, j])
+            # figure_5_b._draw_using_figure(fig, axs[1, j])
             g[1].append(g1)
 
             # Row 3: Tests per day with positivity ratio
             g2 = (ggplot(country_data)
-                            + geom_line(aes(x='date', y='new_tests'), group=1, size=0.3, color=my_palette_1, na_rm=True)
-                            + geom_line(aes(x='date', y='new_tests_smooth'), group=1, color=my_palette_2, na_rm=True)
-                            + geom_line(aes(x='date', y='positive_rate_smooth_normalized'), group=1,
-                                        color=my_palette_3, na_rm=True)
-                            + scale_y_continuous(name="Tests per Day", expand=[0, 0], limits=[0, np.nan])
-                            + labs(x="Date")
-                            + theme_classic(base_size=8, base_family='serif')
-                            + theme(plot_title=element_text(hjust=0.5), axis_title_y=element_text(color=my_palette_2)))
+                  + geom_line(aes(x='date', y='new_tests'), group=1, size=0.3, color=my_palette_1, na_rm=True)
+                  + geom_line(aes(x='date', y='new_tests_smooth'), group=1, color=my_palette_2, na_rm=True)
+                  + geom_line(aes(x='date', y='positive_rate_smooth_normalized'), group=1,
+                              color=my_palette_3, na_rm=True)
+                  + scale_y_continuous(name="Tests per Day", expand=[0, 0], limits=[0, np.nan])
+                  + labs(x="Date")
+                  + theme_classic(base_size=8, base_family='serif')
+                  + theme(plot_title=element_text(hjust=0.5), axis_title_y=element_text(color=my_palette_2)))
             # removed 'plot_margin=unit([0, 0, 0, 0], "pt")' from both themes, not sure what it should be in plotnine
             # should be an argument in scale_y_continuous:
             # sec.axis = sec_axis(~. / (max_tests_a / max_positive_rate_a), name = "Positive Rate")
@@ -314,7 +318,7 @@ class ManuscriptFigures:
 
         # convert all ggplots to cv2 objects (via matplotlib fig objects
         # then concatenate them, first by row, then by column
-        cv2_images = [[],[],[]]
+        cv2_images = [[], [], []]
         for i in range(3):
             for j in range(len(country_list)):
                 fig = g[i][j].draw()
@@ -335,8 +339,104 @@ class ManuscriptFigures:
         # save final output
         cv2.imwrite(os.path.join(self.output_path, '5.png'), cv2_images)
 
+    def _figure6(self):
+        # read data
+        file = os.path.join(self.figure_5_6_data_path, 'figure_4a.csv')
+        figure_4a_data = pd.read_csv(file, header=0, na_values=["N/A", "NA", "#N/A", " ", "", "None"])
+        # figure_4a_data$countrycode < - as.factor(figure_4a_data$countrycode)
+        # figure_4a_data$adm_area_1 < - as.factor(figure_4a_data$adm_area_1)
+        # can use factor in ggplot I think
+
+        file = os.path.join(self.figure_5_6_data_path, 'figure_4.csv')
+        figure_4b_data = pd.read_csv(file, delimiter=';', header=0, na_values=["N/A", "NA", "#N/A", " ", "", "None"])
+        # figure_4b_data$gid < - as.factor(figure_4b_data$gid)
+        # figure_4b_data$fips < - as.factor(figure_4b_data$fips)
+        # can use factor in ggplot I think
+
+        # Get top n states by total confirmed cases, group others into Others
+        figure_4a_max = figure_4a_data.groupby(['adm_area_1']).max()
+        figure_4a_max = figure_4a_max.reset_index().sort_values('confirmed', ascending=False)
+        n = 15
+        top_n = figure_4a_max['adm_area_1'].head(n).values
+
+        # make a df to arrange states by location, west-to-east
+        figure_4a_longitudes = figure_4a_data.loc[figure_4a_data['adm_area_1'].isin(top_n)][["adm_area_1", "longitude"]]
+        figure_4a_longitudes = figure_4a_longitudes.drop_duplicates().sort_values('longitude')[['adm_area_1']]
+
+        figure_4a_data['State'] = figure_4a_data['adm_area_1']
+        # this next line basically says there can be a state called other, for factor purposes?
+        # levels(figure_4a_data$State) < - c(levels(figure_4a_data$State), "Others")
+        figure_4a_data.loc[~figure_4a_data['adm_area_1'].isin(top_n), 'State'] = 'Others'
+        # then the State variable would become a factor and we tie up the longitude with it somehow? not sure.
+        # figure_4a_data$State < - factor(figure_4a_data$State, levels = c(lapply(figure_4a_longitudes, as.character), "Others"))
+        # might want to give others a nan longitude, something like that
+
+        # group the cases together for Others
+        figure_4a_agg = figure_4a_data.groupby(['State', 'date']).sum().reset_index()
+
+        #########################
+
+        # Figure 4b processing
+        # Compute new cases per 10000 population
+        figure_4b_data['new_cases_per_10k'] = 10000 * figure_4b_data['new_cases'] / figure_4b_data['Population']
+
+        # Define which dates to plot in choropleth
+        date_1 = datetime.strptime("2020-04-08", "%Y-%m-%d")
+        date_2 = datetime.strptime("2020-07-21", "%Y-%m-%d")
+        date_3 = datetime.strptime("2021-01-04", "%Y-%m-%d")
+
+        # Subset for the two dates select
+        figure_4b1_data = figure_4b_data.loc[figure_4b_data['date'] == date_1]
+        figure_4b2_data = figure_4b_data.loc[figure_4b_data['date'] == date_2]
+        figure_4b3_data = figure_4b_data.loc[figure_4b_data['date'] == date_3]
+
+        # Set max value to show. Censor any values above this
+        color_max = 250
+
+        for sub_df in [figure_4b1_data, figure_4b2_data, figure_4b3_data]:
+            # Censor large values
+            sub_df['new_cases_censored'] = sub_df[['new_cases']]
+            sub_df.loc[sub_df['new_cases'] > color_max, 'new_cases_censored'] = color_max
+            # Remove rows with NA in geometry. Required to convert column to shape object
+            sub_df = sub_df[sub_df['geometry'].notna()]
+            # Convert to a GeoDataFrame
+            sub_df['geometry'] = sub_df['geometry'].apply(wkt.loads)
+            sub_df = gpd.GeoDataFrame(sub_df)
+
+        # Set up colour palette
+        my_palette_1 = brewer_pal(palette="YlGnBu")(4)[1]
+        my_palette_1 = brewer_pal(palette="YlGnBu")(4)[3]
+        my_palette_3 = "GnBu"
+        my_palette_4 = brewer_pal(palette="Oranges")(4)[3]
+        # Viridis color palette with last item gray
+        colmap = cm.get_cmap('viridis', n + 1)
+        v_palette = [colors.rgb2hex(c) for c in colmap.colors]
+        v_palette[n] = "#C0C0C0"
+
+        # Figure 4a: Stacked Area Time series of US counties
+        figure_4a = (ggplot(figure_4a_agg, aes(x='date', y='new_per_day_smooth', group='State', fill='State'))
+                     + geom_area(alpha=0.8, colour="white", na_rm=True, size=0.3)
+                     + scale_fill_manual(values=v_palette)
+                     + labs(title="Figure 4: New Cases Over Time for US States", y="New Cases per Day", x="Date")
+                     + scale_x_date(date_breaks="1 month", date_labels="%b")
+                     + scale_y_continuous(expand=[0, 0], limits=[0, np.nan])
+                     + theme_classic(base_size=8, base_family='serif')
+                     + theme(plot_title=element_text(hjust=0.5, size=3),
+                             plot_margin=0.1,
+                             legend_position='left',
+                             legend_key_size=0.25,
+                             legend_title=element_text(size=3),
+                             legend_text=element_text(size=3))
+                     )
+        file = os.path.join(self.output_path, '6a.png')
+        figure_4a.save(filename=file, height=7, width=16, units="cm", dpi=300)
+
+        # Look in R/generate_figure_4.R for the original code to adapt
+        return
+
     def main(self):
-        # Figure 1a -- need to implement discrete scale - TODO
+        '''
+        '# Figure 1a -- need to implement discrete scale - TODO
         self._figure1a()
         self._figure1b()
         self._figure1c()
@@ -346,5 +446,7 @@ class ManuscriptFigures:
         self._figure4()
         # Figure 5 requires work to establish the secondary axes - TODO
         self._figure5()
+        '''
         # Figure 6 will be a map again, like Figure 1a. - TODO
+        self._figure6()
         return
