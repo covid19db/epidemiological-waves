@@ -13,6 +13,8 @@ import os
 import pandas as pd
 from plotnine import *
 import pickle
+from mizani.palettes import brewer_pal
+import cv2
 
 import src.wavefinder as wf
 
@@ -20,6 +22,7 @@ import src.wavefinder as wf
 class ManuscriptFigures:
     def __init__(self, config: Config, data_provider: DataProvider, data: dict):
         self.data_path = config.manuscript_figures_data_path
+        self.figure_5_data_path = config.data_path
         self.output_path = os.path.join(self.data_path, "..", "output")
         self.data = data
         self.data_provider = data_provider
@@ -151,10 +154,8 @@ class ManuscriptFigures:
         g.save(filename=file, height=7.4, width=14.7, units="cm", dpi=500)
 
     def _figure3(self):
-
         (cases, deaths) = self.data['GHA']
         wf.plot_peaks([cases, deaths], 'Figure 3', True, self.output_path)
-
 
     def _figure4(self):
         epi_table = self.data_provider.get_epi_table()
@@ -172,7 +173,6 @@ class ManuscriptFigures:
             plt.suptitle(country)
 
             for i, wavelist in enumerate(self.data[country]):
-
                 raw = raw_data[i].values
 
                 smoothed = wavelist.raw_data.values
@@ -190,6 +190,114 @@ class ManuscriptFigures:
             plt.savefig(os.path.join(self.output_path, f'4_{country}.png'))
             plt.close('all')
 
+    def _figure5(self):
+        # Read the data
+        file = os.path.join(self.figure_5_data_path, 'figure_2.csv')
+        figure_5_data = pd.read_csv(file, header=0, na_values=["N/A", "NA", "#N/A", " ", "", "None"])
+
+        # Cut the positive rate before April due to low denominator
+        figure_5_data.loc[figure_5_data['date'] < '2020-04-01', 'positive_rate'] = np.nan
+        figure_5_data.loc[figure_5_data['date'] < '2020-05-01', 'cfr_smooth'] = np.nan
+        # For italy, need to exclude some dates from CFR calculation when cases were very low
+        figure_5_data.loc[(figure_5_data['country'] == 'Italy') & (figure_5_data['date'] >= '2020-08-16') &
+                          (figure_5_data['date'] <= '2020-08-22'), 'cfr_smooth'] = np.nan
+
+        # Normalize the ratios so that they fit on the plot
+        figure_5_data[['cfr_smooth_normalized', 'positive_rate_smooth_normalized']] = np.nan
+        for country in figure_5_data['country'].unique():
+            max_dead_a = figure_5_data.loc[figure_5_data['country'] == country, 'dead_per_day'].max()
+            max_cfr_a = figure_5_data.loc[figure_5_data['country'] == country, 'cfr_smooth'].max()
+            figure_5_data.loc[figure_5_data['country'] == country,
+                              'cfr_smooth_normalized'] = figure_5_data.loc[figure_5_data['country'] == country,
+                                                                           'cfr_smooth'] * (max_dead_a / max_cfr_a)
+
+            max_tests_a = figure_5_data.loc[figure_5_data['country'] == country, 'new_tests'].max()
+            max_positive_rate_a = figure_5_data.loc[figure_5_data['country'] == country, 'positive_rate_smooth'].max()
+            figure_5_data.loc[figure_5_data['country'] == country,
+                              'positive_rate_smooth_normalized'] = figure_5_data.loc[figure_5_data['country'] == country, 'positive_rate_smooth'] * (max_tests_a / max_positive_rate_a)
+
+        # Define which countries to plot
+        country_list = ["Italy", "United States"]
+
+        # Set up colour palette
+        my_palette_1 = brewer_pal(palette="YlGnBu")(4)[1]
+        my_palette_2 = brewer_pal(palette="YlGnBu")(4)[3]
+        my_palette_3 = brewer_pal(palette="Oranges")(4)[3]
+
+        # Store plots in a 3 x len(country_list) array
+        g = [[],[],[]]
+
+        for j, country_a in enumerate(country_list):
+            country_data = figure_5_data[figure_5_data['country'] == country_a]
+
+            # Row 1: cases per day
+            g0 = (ggplot(country_data)
+                            + geom_line(aes(x='date', y='new_per_day'), group=1, size=0.3, color=my_palette_1, na_rm=True)
+                            + geom_line(aes(x='date', y='new_per_day_smooth'), group=1, color=my_palette_2, na_rm=True)
+                            + labs(title=country_a, y="New Cases per Day", x=element_blank())
+                            + theme_classic(base_size=8, base_family='serif')
+                            + scale_y_continuous(expand=[0, 0], limits=[0, np.nan])
+                            + theme(plot_title=element_text(size=8, hjust=0.5)))
+            # removed 'plot_margin=unit([0, 0, 0, 0], "pt")' from theme, not sure what it should be in plotnine
+            #figure_5_a._draw_using_figure(fig, axs[0,j])
+            g[0].append(g0)
+
+            # Row 2: Deaths per day with CFR
+            # seems like we will need to do some trick with the twinx feature of matplotlib
+            g1 = (ggplot(country_data)
+                            + geom_line(aes(x='date', y='dead_per_day'), group=1, size=0.3, color=my_palette_1, na_rm=True)
+                            + geom_line(aes(x='date', y='dead_per_day_smooth'), group=1, color=my_palette_2, na_rm=True)
+                            + geom_line(aes(x='date', y='cfr_smooth_normalized'), group=1, color=my_palette_3,
+                                        na_rm=True)
+                            + scale_y_continuous(name="Deaths per Day", expand=[0, 0], limits=[0, np.nan])
+                            + theme(plot_title=element_text(hjust=0.5))
+                            + theme_classic(base_size=8, base_family='serif')
+                            + theme(plot_title=element_text(hjust=0.5), axis_title_y=element_text(color=my_palette_2)))
+            # removed 'plot_margin=unit([0, 0, 0, 0], "pt")' from both themes, not sure what it should be in plotnine
+            # should be an argument in scale_y_continuous:
+            # sec.axis = sec_axis(~. / (max_dead_a / max_cfr_a), name = "Case Fatality Rate")
+            # similarly had to drop axis_title_y_right and rename axis_title_y_left as axis_title_y
+            #figure_5_b._draw_using_figure(fig, axs[1, j])
+            g[1].append(g1)
+
+            # Row 3: Tests per day with positivity ratio
+            g2 = (ggplot(country_data)
+                            + geom_line(aes(x='date', y='new_tests'), group=1, size=0.3, color=my_palette_1, na_rm=True)
+                            + geom_line(aes(x='date', y='new_tests_smooth'), group=1, color=my_palette_2, na_rm=True)
+                            + geom_line(aes(x='date', y='positive_rate_smooth_normalized'), group=1,
+                                        color=my_palette_3, na_rm=True)
+                            + scale_y_continuous(name="Tests per Day", expand=[0, 0], limits=[0, np.nan])
+                            + labs(x="Date")
+                            + theme_classic(base_size=8, base_family='serif')
+                            + theme(plot_title=element_text(hjust=0.5), axis_title_y=element_text(color=my_palette_2)))
+            # removed 'plot_margin=unit([0, 0, 0, 0], "pt")' from both themes, not sure what it should be in plotnine
+            # should be an argument in scale_y_continuous:
+            # sec.axis = sec_axis(~. / (max_tests_a / max_positive_rate_a), name = "Positive Rate")
+            g[2].append(g2)
+
+        # convert all ggplots to cv2 objects (via matplotlib fig objects
+        # then concatenate them, first by row, then by column
+        cv2_images = [[],[],[]]
+        for i in range(3):
+            for j in range(len(country_list)):
+                fig = g[i][j].draw()
+
+                # convert canvas to image
+                fig.canvas.draw()
+                img = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8,
+                                    sep='')
+                img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+
+                # img is rgb, convert to opencv's default bgr
+                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+                cv2_images[i].append(img)
+
+            cv2_images[i] = cv2.hconcat(cv2_images[i])
+        cv2_images = cv2.vconcat(cv2_images)
+
+        # save final output
+        cv2.imwrite(os.path.join(self.output_path, '5.png'), cv2_images)
+
     def main(self):
         # Figure 1a is a map - TODO
         self._figure1b()
@@ -198,4 +306,6 @@ class ManuscriptFigures:
         self._figure3()
         # Figure 4 is looking a little out of alignment - TODO
         self._figure4()
+        # Figure 5 requires work to establish the secondary axes - TODO
+        self._figure5()
         return
