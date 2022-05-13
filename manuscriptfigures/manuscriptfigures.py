@@ -28,6 +28,43 @@ class ManuscriptFigures:
         self.data_provider = data_provider
         return
 
+    def _figure1a(self):
+        # collect data
+        file = os.path.join(self.data_path, "2021-09-15/figure_1b.csv")
+        t0_df = pd.read_csv(file,
+                            delimiter=";",
+                            header=0,
+                            usecols=["countrycode", "days_to_t0_10_dead"],
+                            na_values=["N/A", "NA", "#N/A", " ", "", "None"]).rename(
+            columns={'countrycode': 'GID_0', 'days_to_t0_10_dead': 'days_to_t0'})
+        world_sf = gpd.read_file(os.path.join(self.data_path, "2020-09-13/gadm36_0.json"))
+        plot_sf = world_sf.merge(t0_df, how="left", on="GID_0")
+
+        # Original R code here, but I will just hard-code in what is used in manuscript
+        # t0_breaks <- round(boxplot.stats(plot_sf$days_to_t0)$stats / 10) * 10
+        t0_breaks = [90,110,170,280]
+
+        # generate map
+        g = (ggplot() +
+             geom_map(data=plot_sf, mapping=aes(fill='days_to_t0'), colour="white", size=0.1) +
+             scale_fill_continuous(breaks=t0_breaks) +
+             labs(fill="Days until epidemic\nthreshold reached") +
+             theme_void() +
+             theme(legend_box_background = element_rect(fill="white", colour="grey"),
+                   legend_box_margin = 2,
+                   legend_position = "left",
+                   legend_direction = "horizontal",
+                   legend_title = element_text(vjust=1.0, size=7),
+                   legend_key_height = 6)
+             )
+        # replaced scale_fill_fermenter(breaks=t0_breaks,type="seq",direction=-1,palette="RdPu")
+        # with the scale_fill_continuous. This is not satisfactory and data need to be binned
+        # legend_position was set to left instead of coordinates as it didn't seem to work
+        # legend also unsatisfactory
+
+        file = os.path.join(self.output_path, "1A.png")
+        g.save(filename=file, height=14.8*0.7, width=21, units="cm", dpi=500)
+
     def _figure1b(self):
         # read in the GNI data
         file = os.path.join(self.data_path, "2020-09-15/gni_data.csv")
@@ -299,7 +336,8 @@ class ManuscriptFigures:
         cv2.imwrite(os.path.join(self.output_path, '5.png'), cv2_images)
 
     def main(self):
-        # Figure 1a is a map - TODO
+        # Figure 1a -- need to implement discrete scale - TODO
+        self._figure1a()
         self._figure1b()
         self._figure1c()
         # Figure 2 is a hand-drawn figure
@@ -308,4 +346,5 @@ class ManuscriptFigures:
         self._figure4()
         # Figure 5 requires work to establish the secondary axes - TODO
         self._figure5()
+        # Figure 6 will be a map again, like Figure 1a. - TODO
         return
