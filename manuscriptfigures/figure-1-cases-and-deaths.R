@@ -1,9 +1,17 @@
-library(magrittr)
-library(dplyr)
-library(reshape2)
-library(ggplot2)
-library(scales)
-library(zoo)
+package_list <- c("magrittr","dplyr","reshape2","ggplot2","scales","zoo")
+for (package in package_list){
+  if (!package %in% installed.packages()){
+    install.packages(package)
+  }
+}
+lapply(package_list, require, character.only = TRUE)
+
+
+# clear workspace
+rm(list=ls())
+
+# disable scientific notation
+options(scipen=999)
 
 ## we make a collection of countries that we care about so we can subset by them
 ## later. We also need to extract the population of each of the countries so

@@ -1,10 +1,18 @@
-library(dplyr)
-library(purrr)
-library(magrittr)
-library(ggplot2)
-library(scales)
-library(GADMTools)
-library(geojsonio)
+package_list <- c("magrittr","dplyr", "ggplot2","scales","purrr", "GADMTools", "geojsonio")
+for (package in package_list){
+  if (!package %in% installed.packages()){
+    install.packages(package)
+  }
+}
+lapply(package_list, require, character.only = TRUE)
+
+
+# clear workspace
+rm(list=ls())
+
+# disable scientific notation
+options(scipen=999)
+
 
 
 ## read in the t_0 data to colour the regions with.

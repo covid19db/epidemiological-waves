@@ -1,8 +1,18 @@
-library(dplyr)
-library(purrr)
-library(magrittr)
-library(ggplot2)
-library(scales)
+package_list <- c("magrittr","dplyr", "ggplot2","scales","purrr")
+for (package in package_list){
+  if (!package %in% installed.packages()){
+    install.packages(package)
+  }
+}
+lapply(package_list, require, character.only = TRUE)
+
+
+# clear workspace
+rm(list=ls())
+
+# disable scientific notation
+options(scipen=999)
+
 
 x <- read.csv("data/2020-09-15/gni_data.csv",
   stringsAsFactors = FALSE

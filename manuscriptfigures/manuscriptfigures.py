@@ -340,7 +340,7 @@ class ManuscriptFigures:
         file = os.path.join(self.figure_5_6_data_path, 'figure_4a.csv')
         figure_6a_data = pd.read_csv(file, header=0, na_values=["N/A", "NA", "#N/A", " ", "", "None"])
 
-        file = os.path.join(self.figure_5_6_data_path, 'figure_4.csv')
+        file = os.path.join(self.figure_5_6_data_path, 'figure_6.csv')
         figure_6b_data = pd.read_csv(file, delimiter=';', header=0, na_values=["N/A", "NA", "#N/A", " ", "", "None"])
 
         # Get top n states by total confirmed cases, group others into Others
@@ -455,16 +455,11 @@ class ManuscriptFigures:
         return
 
     def main(self):
-        # Figure 1a -- need to implement discrete scale - TODO
-        self._figure1a()
-        self._figure1b()
-        self._figure1c()
-        # Figure 2 is a hand-drawn figure
+        # Figure 1 - implemented in R
+        # Figure 2 - a hand-drawn figure
         self._figure3()
         # Figure 4 is looking a little out of alignment - TODO
         self._figure4()
-        # Figure 5 requires work to establish the secondary axes - TODO
-        self._figure5()
-        # Figure 6b, legend not printing. - TODO
-        self._figure6()
+        # Figure 5 - implemented in R
+        # Figure 63 - implememented in R
         return
