@@ -1,22 +1,18 @@
+import os
+
+import pandas as pd
 import numpy as np
 import geopandas as gpd
-from datetime import datetime
-import psycopg2
+from shapely import wkt
+
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors
-import seaborn as sns
-from shapely import wkt
-from tqdm import tqdm
-from src.config import Config
-from src.data_provider import DataProvider
-from src.epidemicwaveclassifier import EpidemicWaveClassifier
-import os
-import pandas as pd
 from plotnine import *
-import pickle
 from mizani.palettes import brewer_pal
 import cv2
 
+from src.config import Config
+from src.data_provider import DataProvider
 import src.wavefinder as wf
 
 
@@ -180,13 +176,13 @@ class ManuscriptFigures:
         smooth_df = pd.concat([smooth_df_npd, smooth_df_dpd])
 
         g = (ggplot(aligned_df, aes(x="num_aligned_date", y="value_per_10k", group="countrycode"))
-             + geom_point(shape=1, alpha=0.1)
-             + geom_line(data=smooth_df, group="NA", colour="#7a0177", size=2)
+             + geom_line(colour="lightgrey", size=0.1)
+             + geom_line(data=smooth_df, group="NA", colour="#7a0177", size=1)
              + facet_wrap(facets="~ variable", scales="free_y", labeller=facet_labels)
              + scale_y_sqrt(n_breaks=4)
              + labs(y="Per 10,000 people (square root scale)",
                     x="Days since epidemic threshold reached")
-             + theme_bw()
+             + theme_classic()
              + theme(strip_background=element_blank(), strip_text=element_text(face="bold")))
 
         file = os.path.join(self.output_path, "1C.png")
@@ -342,66 +338,64 @@ class ManuscriptFigures:
     def _figure6(self):
         # read data
         file = os.path.join(self.figure_5_6_data_path, 'figure_4a.csv')
-        figure_4a_data = pd.read_csv(file, header=0, na_values=["N/A", "NA", "#N/A", " ", "", "None"])
-        # figure_4a_data$countrycode < - as.factor(figure_4a_data$countrycode)
-        # figure_4a_data$adm_area_1 < - as.factor(figure_4a_data$adm_area_1)
-        # can use factor in ggplot I think
+        figure_6a_data = pd.read_csv(file, header=0, na_values=["N/A", "NA", "#N/A", " ", "", "None"])
 
         file = os.path.join(self.figure_5_6_data_path, 'figure_4.csv')
-        figure_4b_data = pd.read_csv(file, delimiter=';', header=0, na_values=["N/A", "NA", "#N/A", " ", "", "None"])
-        # figure_4b_data$gid < - as.factor(figure_4b_data$gid)
-        # figure_4b_data$fips < - as.factor(figure_4b_data$fips)
-        # can use factor in ggplot I think
+        figure_6b_data = pd.read_csv(file, delimiter=';', header=0, na_values=["N/A", "NA", "#N/A", " ", "", "None"])
 
         # Get top n states by total confirmed cases, group others into Others
-        figure_4a_max = figure_4a_data.groupby(['adm_area_1']).max()
-        figure_4a_max = figure_4a_max.reset_index().sort_values('confirmed', ascending=False)
+        figure_6a_max = figure_6a_data.groupby(['adm_area_1']).max()
+        figure_6a_max = figure_6a_max.reset_index().sort_values('confirmed', ascending=False)
         n = 15
-        top_n = figure_4a_max['adm_area_1'].head(n).values
+        top_n = figure_6a_max['adm_area_1'].head(n).values
 
         # make a df to arrange states by location, west-to-east
-        figure_4a_longitudes = figure_4a_data.loc[figure_4a_data['adm_area_1'].isin(top_n)][["adm_area_1", "longitude"]]
+        figure_4a_longitudes = figure_6a_data.loc[figure_6a_data['adm_area_1'].isin(top_n)][["adm_area_1", "longitude"]]
         figure_4a_longitudes = figure_4a_longitudes.drop_duplicates().sort_values('longitude')[['adm_area_1']]
 
-        figure_4a_data['State'] = figure_4a_data['adm_area_1']
+        figure_6a_data['State'] = figure_6a_data['adm_area_1']
         # this next line basically says there can be a state called other, for factor purposes?
-        # levels(figure_4a_data$State) < - c(levels(figure_4a_data$State), "Others")
-        figure_4a_data.loc[~figure_4a_data['adm_area_1'].isin(top_n), 'State'] = 'Others'
+        # levels(figure_6a_data$State) < - c(levels(figure_6a_data$State), "Others")
+        figure_6a_data.loc[~figure_6a_data['adm_area_1'].isin(top_n), 'State'] = 'Others'
         # then the State variable would become a factor and we tie up the longitude with it somehow? not sure.
-        # figure_4a_data$State < - factor(figure_4a_data$State, levels = c(lapply(figure_4a_longitudes, as.character), "Others"))
+        # figure_6a_data$State < - factor(figure_6a_data$State, levels = c(lapply(figure_4a_longitudes, as.character), "Others"))
         # might want to give others a nan longitude, something like that
 
         # group the cases together for Others
-        figure_4a_agg = figure_4a_data.groupby(['State', 'date']).sum().reset_index()
+        figure_4a_agg = figure_6a_data.groupby(['State', 'date']).sum().reset_index()
 
         #########################
 
         # Figure 4b processing
         # Compute new cases per 10000 population
-        figure_4b_data['new_cases_per_10k'] = 10000 * figure_4b_data['new_cases'] / figure_4b_data['Population']
+        figure_6b_data['new_cases_per_10k'] = 10000 * figure_6b_data['new_cases'] / figure_6b_data['Population']
 
         # Define which dates to plot in choropleth
-        date_1 = datetime.strptime("2020-04-08", "%Y-%m-%d")
-        date_2 = datetime.strptime("2020-07-21", "%Y-%m-%d")
-        date_3 = datetime.strptime("2021-01-04", "%Y-%m-%d")
+        date_1 = "2020-04-08"
+        date_2 = "2020-07-21"
+        date_3 = "2021-01-04"
 
         # Subset for the two dates select
-        figure_4b1_data = figure_4b_data.loc[figure_4b_data['date'] == date_1]
-        figure_4b2_data = figure_4b_data.loc[figure_4b_data['date'] == date_2]
-        figure_4b3_data = figure_4b_data.loc[figure_4b_data['date'] == date_3]
+        figure_6b1_data = figure_6b_data.loc[figure_6b_data['date'] == date_1]
+        figure_6b2_data = figure_6b_data.loc[figure_6b_data['date'] == date_2]
+        figure_6b3_data = figure_6b_data.loc[figure_6b_data['date'] == date_3]
 
         # Set max value to show. Censor any values above this
         color_max = 250
 
-        for sub_df in [figure_4b1_data, figure_4b2_data, figure_4b3_data]:
+        def prep_gdf(df):
             # Censor large values
-            sub_df['new_cases_censored'] = sub_df[['new_cases']]
-            sub_df.loc[sub_df['new_cases'] > color_max, 'new_cases_censored'] = color_max
+            df['new_cases_censored'] = df[['new_cases']]
+            df.loc[df['new_cases'] > color_max, 'new_cases_censored'] = color_max
             # Remove rows with NA in geometry. Required to convert column to shape object
-            sub_df = sub_df[sub_df['geometry'].notna()]
+            df = df[df['geometry'].notna()]
             # Convert to a GeoDataFrame
-            sub_df['geometry'] = sub_df['geometry'].apply(wkt.loads)
-            sub_df = gpd.GeoDataFrame(sub_df)
+            df['geometry'] = df['geometry'].apply(wkt.loads)
+            return gpd.GeoDataFrame(df)
+
+        figure_6b1_data = prep_gdf(figure_6b1_data)
+        figure_6b2_data = prep_gdf(figure_6b2_data)
+        figure_6b3_data = prep_gdf(figure_6b3_data)
 
         # Set up colour palette
         my_palette_1 = brewer_pal(palette="YlGnBu")(4)[1]
@@ -413,8 +407,8 @@ class ManuscriptFigures:
         v_palette = [colors.rgb2hex(c) for c in colmap.colors]
         v_palette[n] = "#C0C0C0"
 
-        # Figure 4a: Stacked Area Time series of US counties
-        figure_4a = (ggplot(figure_4a_agg, aes(x='date', y='new_per_day_smooth', group='State', fill='State'))
+        # Figure 6a: Stacked Area Time series of US counties
+        figure_6a = (ggplot(figure_4a_agg, aes(x='date', y='new_per_day_smooth', group='State', fill='State'))
                      + geom_area(alpha=0.8, colour="white", na_rm=True, size=0.3)
                      + scale_fill_manual(values=v_palette)
                      + labs(title="Figure 4: New Cases Over Time for US States", y="New Cases per Day", x="Date")
@@ -429,14 +423,39 @@ class ManuscriptFigures:
                              legend_text=element_text(size=3))
                      )
         file = os.path.join(self.output_path, '6a.png')
-        figure_4a.save(filename=file, height=7, width=16, units="cm", dpi=300)
+        figure_6a.save(filename=file, height=7, width=16, units="cm", dpi=300)
 
-        # Look in R/generate_figure_4.R for the original code to adapt
+        # Figure 6b: Choropleth of US counties at USA peak dates
+        def figure_6b(data, date):
+            g= (ggplot(data=data)
+                + geom_map(aes(fill='new_cases_censored'), colour="white", na_rm=True, show_legend=False, size=0)
+                + labs(title=date, fill="New Cases per Day")
+                + scale_fill_distiller(palette=my_palette_3, trans="reverse", limits=[color_max, 0])
+                + scale_x_continuous(expand=[0, 0], limits=[-125, -65])  # coordinates are cropped to exclude Alaska
+                + scale_y_continuous(expand=[0, 0], limits=[24, 50])
+                + theme_void()
+                + theme(plot_title=element_text(hjust=0.5, size=8, family='serif'),
+                        legend_position = "bottom")
+                )
+            return g
+
+        file = os.path.join(self.output_path, '6b1.png')
+        figure_6b(figure_6b1_data, date_1).save(filename=file, width=5.3, height=2.9, units='cm', dpi=300)
+        file = os.path.join(self.output_path, '6b2.png')
+        figure_6b(figure_6b2_data, date_2).save(filename=file, width=5.3, height=2.9, units='cm', dpi=300)
+        file = os.path.join(self.output_path, '6b3.png')
+        figure_6b(figure_6b3_data, date_3).save(filename=file, width=5.3, height=2.9, units='cm', dpi=300)
+        file = os.path.join(self.output_path, '6b_legend.png')
+        legend_figure = (figure_6b(figure_6b3_data, date_3)
+                         + theme(legend_title=element_text(vjust=1,size=9,family='serif'),
+                                 legend_text=element_text(size=8,family='serif'))
+                         + guides(fill = guide_colorbar(barwidth = 20, barheight = 0.3, reverse=True)))
+        legend_figure.save(filename=file, width = 15.9, height = 2.9, units = 'cm', dpi = 300)
+
         return
 
     def main(self):
-        '''
-        '# Figure 1a -- need to implement discrete scale - TODO
+        # Figure 1a -- need to implement discrete scale - TODO
         self._figure1a()
         self._figure1b()
         self._figure1c()
@@ -446,7 +465,6 @@ class ManuscriptFigures:
         self._figure4()
         # Figure 5 requires work to establish the secondary axes - TODO
         self._figure5()
-        '''
-        # Figure 6 will be a map again, like Figure 1a. - TODO
+        # Figure 6b, legend not printing. - TODO
         self._figure6()
         return
