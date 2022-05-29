@@ -7,9 +7,9 @@ from shapely import wkt
 
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors
-from plotnine import *
-from mizani.palettes import brewer_pal
-import cv2
+#from plotnine import *
+#from mizani.palettes import brewer_pal
+#import cv2
 
 from src.config import Config
 from src.data_provider import DataProvider
@@ -20,7 +20,7 @@ class ManuscriptFigures:
     def __init__(self, config: Config, data_provider: DataProvider, data: dict):
         self.data_path = config.manuscript_figures_data_path
         self.figure_5_6_data_path = config.data_path
-        self.output_path = os.path.join(self.data_path, "..", "output")
+        self.output_path = os.path.join(self.data_path, "..", "output/png")
         self.data = data
         self.data_provider = data_provider
         return
