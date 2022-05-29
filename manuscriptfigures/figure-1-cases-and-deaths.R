@@ -17,7 +17,7 @@ options(scipen=999)
 ## later. We also need to extract the population of each of the countries so
 ## that the time series values can be expressed as per capita.
 extra_df <- read.table(
-  file = "data/2021-09-15/figure_1b.csv",
+  file = "data/figure_1b.csv",
   header = TRUE,
   sep = ";",
   stringsAsFactors = FALSE
@@ -54,7 +54,7 @@ if (any(is.na(y_pop$population))) {
 
 ## read in the time series of cases and deaths so we have the actual data to
 ## plot.
-x <- read.csv("data/2021-09-15/figure_1a.csv") %>%
+x <- read.csv("data/figure_1a.csv") %>%
   select(countrycode, date, new_per_day, dead_per_day) %>%
   filter(is.element(el = countrycode, set = y_chr)) %>%
   mutate(date = as.Date(date)) %>%
@@ -62,7 +62,7 @@ x <- read.csv("data/2021-09-15/figure_1a.csv") %>%
 
 ## read in the t_0 data to align the time series correctly.
 t0_df <- read.table(
-  file = "data/2021-09-15/figure_1b.csv",
+  file = "data/figure_1b.csv",
   header = TRUE,
   sep = ";",
   stringsAsFactors = FALSE

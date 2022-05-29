@@ -27,14 +27,14 @@ class ManuscriptFigures:
 
     def _figure1a(self):
         # collect data
-        file = os.path.join(self.data_path, "2021-09-15/figure_1b.csv")
+        file = os.path.join(self.data_path, "figure_1b.csv")
         t0_df = pd.read_csv(file,
                             delimiter=";",
                             header=0,
                             usecols=["countrycode", "days_to_t0_10_dead"],
                             na_values=["N/A", "NA", "#N/A", " ", "", "None"]).rename(
             columns={'countrycode': 'GID_0', 'days_to_t0_10_dead': 'days_to_t0'})
-        world_sf = gpd.read_file(os.path.join(self.data_path, "2020-09-13/gadm36_0.json"))
+        world_sf = gpd.read_file(os.path.join(self.data_path, "gadm36_0.json"))
         plot_sf = world_sf.merge(t0_df, how="left", on="GID_0")
 
         # Original R code here, but I will just hard-code in what is used in manuscript
@@ -65,13 +65,13 @@ class ManuscriptFigures:
 
     def _figure1b(self):
         # read in the GNI data
-        file = os.path.join(self.data_path, "2020-09-15/gni_data.csv")
+        file = os.path.join(self.data_path, "gni_data.csv")
         x = pd.read_csv(file,
                         header=0,
                         usecols=['countrycode', 'gni_per_capita'])
 
         # read in the t_0 data
-        file = os.path.join(self.data_path, "2021-09-15/figure_1b.csv")
+        file = os.path.join(self.data_path, "figure_1b.csv")
         t0_df = pd.read_csv(file,
                             delimiter=";",
                             header=0,
@@ -99,8 +99,7 @@ class ManuscriptFigures:
         g.save(filename=file, height=7.4, width=14.7, units="cm", dpi=500)
 
     def _figure1c(self):
-        data_path = os.path.join(self.data_path, "2021-09-15")
-        file = os.path.join(data_path, "figure_1b.csv")
+        file = os.path.join(self.data_path, "figure_1b.csv")
         extra_df = pd.read_csv(file,
                                delimiter=";",
                                header=0,
@@ -128,7 +127,7 @@ class ManuscriptFigures:
 
         ## read in the time series of cases and deaths so we have the actual data to
         ## plot.
-        file = os.path.join(data_path, "figure_1a.csv")
+        file = os.path.join(self.data_path, "figure_1a.csv")
         x = pd.read_csv(file,
                         header=0,
                         usecols=["countrycode", "date", "new_per_day", "dead_per_day"],
@@ -138,7 +137,7 @@ class ManuscriptFigures:
         x = pd.melt(x, id_vars=["countrycode", "date"])
 
         ## read in the t_0 data to align the time series correctly.
-        file = os.path.join(data_path, "figure_1b.csv")
+        file = os.path.join(self.data_path, "figure_1b.csv")
         t0_df = pd.read_csv(file,
                             delimiter=";",
                             header=0,
@@ -461,5 +460,5 @@ class ManuscriptFigures:
         # Figure 4 is looking a little out of alignment - TODO
         self._figure4()
         # Figure 5 - implemented in R
-        # Figure 63 - implememented in R
+        # Figure 6 - implememented in R
         return

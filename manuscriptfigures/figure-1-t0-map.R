@@ -17,7 +17,7 @@ options(scipen=999)
 
 ## read in the t_0 data to colour the regions with.
 t0_df <- read.table(
-  file = "data/2021-09-15/figure_1b.csv",
+  file = "data/igure_1b.csv",
   header = TRUE,
   sep = ";",
   stringsAsFactors = FALSE
@@ -26,7 +26,7 @@ t0_df <- read.table(
   rename(GID_0 = countrycode, days_to_t0 = days_to_t0_10_dead)
 
 ## read in the geometry of each region and link it to the data via the GID_0.
-world_sf <- topojson_read("data/2020-09-13/gadm36_0.json")
+world_sf <- topojson_read("data/gadm36_0.json")
 plot_sf <- left_join(world_sf, t0_df, by = "GID_0")
 
 t0_breaks <- round(boxplot.stats(plot_sf$days_to_t0)$stats / 10) * 10

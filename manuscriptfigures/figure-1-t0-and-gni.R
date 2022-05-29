@@ -14,14 +14,14 @@ rm(list=ls())
 options(scipen=999)
 
 
-x <- read.csv("data/2020-09-15/gni_data.csv",
+x <- read.csv("data/gni_data.csv",
   stringsAsFactors = FALSE
 ) %>%
   select(countrycode, gni_per_capita)
 
 ## read in the t_0 data to colour the regions with.
 t0_df <- read.table(
-  file = "data/2021-09-15/figure_1b.csv",
+  file = "data/figure_1b.csv",
   header = TRUE,
   sep = ";",
   stringsAsFactors = FALSE
