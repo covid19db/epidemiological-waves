@@ -13,6 +13,8 @@ lapply(package_list, require, character.only = TRUE)
 # clear workspace
 rm(list=ls())
 
+pdf(NULL)
+
 # Import Data ------------------------------------------------------------
 
 # Import csv file for figure 5

@@ -36,8 +36,8 @@ class Config:
         if not self.base_path:
             return
 
-        self.plot_path = os.path.abspath(os.path.join(self.base_path, '../plots/algorithm_results'))
-        self.data_path = os.path.abspath(os.path.join(self.base_path, '../data'))
+        self.plot_path = os.path.abspath(os.path.join(self.base_path, '../output/plots'))
+        self.data_path = os.path.abspath(os.path.join(self.base_path, '../output/analysis'))
         self.cache_path = os.path.abspath(os.path.join(self.base_path, '../cache'))
         self.manuscript_figures_data_path = os.path.abspath(os.path.join(self.base_path, '../manuscriptfigures/data'))
 
