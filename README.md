@@ -26,7 +26,7 @@ Once the main sub-routine has finished running successfully, the `data` director
 The `plots` directory will contain the plots showing the observed waves.
 The `manuscriptfigures` directory will contain the necessary data as well as some of the figures, which are generated with Python.
 
-The remaining figures can be generated using R by running the script `manuscriptfigures/R.sh` will generate these.
+The remaining figures can be generated using R by running the script `manuscriptfigures/R.sh`.
 Alternatively, they can be generated using the functions in `manuscriptfigures/manuscriptfigures.py`.
 
 # How to run tests
