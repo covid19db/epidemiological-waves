@@ -5,10 +5,10 @@ charts/table_figures/stage_1_timeline.png
 charts/table_figures/stage_2_timeline.png
 charts/table_figures/stage_3_timeline.png
 .Rproj.user
-data/table_of_results.csv
-data/table_1_v1.csv
-data/mann_whitney_si.csv
-data/mann_whitney_gni.csv
+output/table_of_results.csv
+output/table_1_v1.csv
+output/mann_whitney_si.csv
+output/mann_whitney_gni.csv
 cache/world_bank_table.json
 cache/world_bank_table.csv
 cache/testing_table.json
