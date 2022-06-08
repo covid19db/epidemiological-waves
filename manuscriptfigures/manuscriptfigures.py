@@ -211,15 +211,17 @@ class ManuscriptFigures:
             for i, wavelist in enumerate(self.data[country]):
                 raw = raw_data[i].values
 
-                smoothed = wavelist.raw_data.values
+                smoothed = np.hstack((np.zeros(7), wavelist.raw_data.values))
 
                 peaks_and_troughs = wavelist.peaks_sub_c
-                peaks = peaks_and_troughs[peaks_and_troughs['peak_ind'] == 1]['location'].values
+                peaks = peaks_and_troughs[peaks_and_troughs['peak_ind'] == 1]['location'].values + 7
+                troughs = peaks_and_troughs[peaks_and_troughs['peak_ind'] == 0]['location'].values + 7
 
                 axs[i].set_xlabel(wavelist.series_name)
                 axs[i].plot(raw, color='lightgrey', zorder=0)
                 axs[i].plot(smoothed, color='black', zorder=1)
                 axs[i].scatter(peaks, smoothed[peaks.astype(int)], color='red', marker='o', zorder=2)
+                axs[i].scatter(troughs, smoothed[troughs.astype(int)], color='cornflowerblue', marker='o', zorder=2)
 
             fig.tight_layout()
 
@@ -460,7 +462,6 @@ class ManuscriptFigures:
         # Figure 2 - a hand-drawn figure
         print("Preparing Figure 3")
         self._figure3()
-        # Figure 4 is looking a little out of alignment - TODO
         print("Preparing Figure 4")
         self._figure4()
         # Figure 5 - implemented in R
