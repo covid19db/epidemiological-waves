@@ -27,7 +27,8 @@ The `plots` directory will contain the plots showing the observed waves.
 The `manuscriptfigures` directory will contain the necessary data as well as some of the figures, which are generated with Python.
 
 The remaining figures can be generated using R by running the script `manuscriptfigures/R.sh`.
-Alternatively, they can be generated using the functions in `manuscriptfigures/manuscriptfigures.py`.
+This script will also generate a table of correlations.
+Alternatively, there are functions in `manuscriptfigures/manuscriptfigures.py` which can generate these.
 
 # How to run tests
 ```

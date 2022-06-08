@@ -7,9 +7,11 @@ from shapely import wkt
 
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors
-#from plotnine import *
-#from mizani.palettes import brewer_pal
-#import cv2
+
+# packages which must be imported if figures are generated in Python
+# from plotnine import *
+# from mizani.palettes import brewer_pal
+# import cv2
 
 from src.config import Config
 from src.data_provider import DataProvider
@@ -456,9 +458,12 @@ class ManuscriptFigures:
     def main(self):
         # Figure 1 - implemented in R
         # Figure 2 - a hand-drawn figure
+        print("Preparing Figure 3")
         self._figure3()
         # Figure 4 is looking a little out of alignment - TODO
+        print("Preparing Figure 4")
         self._figure4()
         # Figure 5 - implemented in R
         # Figure 6 - implememented in R
+        print(r"Remaining figures must be generated in R from manuscriptfigures\run.sh")
         return
