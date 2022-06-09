@@ -1,4 +1,5 @@
 import os
+
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -6,8 +7,8 @@ import datetime
 import psycopg2
 import matplotlib.pyplot as plt
 import seaborn as sns
-from shapely import wkt
 from tqdm import tqdm
+
 from config import Config
 from data_provider import DataProvider
 from epidemicwaveclassifier import EpidemicWaveClassifier
@@ -162,9 +163,6 @@ class Figures:
             data['new_per_day'].iloc[np.array(data[data['new_per_day'] < 0].index)] = \
                 data['new_per_day'].iloc[np.array(data[data['new_per_day'] < 0].index) - 1]
             data['new_per_day'] = data['new_per_day'].fillna(method='bfill')
-            # x = np.arange(len(data['date']))
-            # y = data['new_per_day'].values
-            # ys = csaps(x, y, x, smooth=SMOOTH)
             ys = data[['new_per_day', 'date']].rolling(window=7, on='date').mean()['new_per_day']
             data['new_per_day_smooth'] = ys
             figure_6a = pd.concat((figure_6a, data)).reset_index(drop=True)

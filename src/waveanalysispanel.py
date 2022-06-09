@@ -1,8 +1,10 @@
 import os
+
 from tqdm import tqdm
 import numpy as np
 import pandas as pd
 from typing import Dict
+
 from data_provider import DataProvider
 from config import Config
 

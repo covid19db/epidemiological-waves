@@ -214,7 +214,7 @@ class Correlations:
                            'h2_testing_policy': 3,
                            'h3_contact_tracing': 2}
         government_response_panel, government_response_series = self._get_government_panel()
-        figure_3_wave_level = pd.DataFrame()
+        wave_level = pd.DataFrame()
         countries = self.epi_panel['countrycode'].unique()
         for country in tqdm(countries, desc='Processing figure 3 wave level data'):
             dead = self.data_provider.get_series(country, 'dead_per_day')
@@ -276,7 +276,7 @@ class Correlations:
                                                                x=[(a - si_series['date'].values[0]).days for a in
                                                                   si_series['date'][~np.isnan(
                                                                       si_series['stringency_index'])]])
-                figure_3_wave_level = figure_3_wave_level.append(data, ignore_index=True)
+                wave_level = wave_level.append(data, ignore_index=True)
 
                 if data['class'] >= 3:
                     # Second wave
@@ -318,7 +318,7 @@ class Correlations:
                                                                    x=[(a - si_series['date'].values[0]).days for a in
                                                                       si_series['date'][
                                                                           ~np.isnan(si_series['stringency_index'])]])
-                    figure_3_wave_level = figure_3_wave_level.append(data, ignore_index=True)
+                    wave_level = wave_level.append(data, ignore_index=True)
 
                     if data['class'] >= 5:
                         # third wave
@@ -362,7 +362,7 @@ class Correlations:
                                                                           in si_series['date'][
                                                                               ~np.isnan(
                                                                                   si_series['stringency_index'])]])
-                        figure_3_wave_level = figure_3_wave_level.append(data, ignore_index=True)
+                        wave_level = wave_level.append(data, ignore_index=True)
 
         class_coarse = {
             0: 'EPI_OTHER',
@@ -428,7 +428,7 @@ class Correlations:
                                           'countrycode'] == country, 'first_date_tests_above_threshold_' + str(
                                 t)].values[0] - data.loc[data['countrycode'] == country, 't0_10_dead'].values[0]).days
 
-        figure_3_all = figure_3_wave_level.merge(
+        all_data = wave_level.merge(
             data[['countrycode', 'class_coarse', 'si_integral', 'last_dead_per_10k', 'last_tests_per_10k',
                   'si_response_time',
                   'c1_response_time', 'c2_response_time', 'c3_response_time', 'c4_response_time', 'c5_response_time',
@@ -437,7 +437,7 @@ class Correlations:
                      'testing_response_time_' + str(t) for t in TESTS_THRESHOLD]]
             , on='countrycode', how='left')
 
-        figure_3_all.to_csv(os.path.join(self.data_dir, 'correlations.csv'))
+        all_data.to_csv(os.path.join(self.data_dir, 'correlations.csv'))
         return
 
     def main(self):

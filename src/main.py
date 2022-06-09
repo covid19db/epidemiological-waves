@@ -1,5 +1,7 @@
 import os
+
 from tqdm import tqdm
+
 from epidemicwaveclassifier import EpidemicWaveClassifier
 from data_provider import DataProvider
 from config import Config
