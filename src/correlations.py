@@ -72,20 +72,18 @@ class Correlations:
                     (government_response_series[flag + '_days_above_threshold'], days_above))
         government_response_series = pd.DataFrame.from_dict(government_response_series)
 
-        government_response_panel = pd.DataFrame(columns=['countrycode', 'country', 'max_si', 'date_max_si',
-                                                          'si_days_to_max_si', 'si_at_t0', 'si_at_peak_1',
-                                                          'si_days_to_threshold',
-                                                          'si_days_above_threshold',
-                                                          'si_days_above_threshold_first_wave',
-                                                          'si_integral'] +
-                                                         [flag + '_at_t0' for flag in flags] +
-                                                         [flag + '_at_peak_1' for flag in flags] +
-                                                         [flag + '_days_to_threshold' for flag in flags] +
-                                                         [flag + '_days_above_threshold' for flag in flags] +
-                                                         [flag + '_days_above_threshold_first_wave' for flag in flags] +
-                                                         [flag + '_raised' for flag in flags] +
-                                                         [flag + '_lowered' for flag in flags] +
-                                                         [flag + '_raised_again' for flag in flags])
+        government_response_panel = pd.DataFrame(columns=(
+            ['countrycode', 'country', 'max_si', 'date_max_si', 'si_days_to_max_si', 'si_at_t0', 'si_at_peak_1',
+             'si_days_to_threshold', 'si_days_above_threshold', 'si_days_above_threshold_first_wave', 'si_integral']
+            + [flag + '_at_t0' for flag in flags]
+            + [flag + '_at_peak_1' for flag in flags]
+            + [flag + '_days_to_threshold' for flag in flags]
+            + [flag + '_days_above_threshold' for flag in flags]
+            + [flag + '_days_above_threshold_first_wave' for flag in flags]
+            + [flag + '_raised' for flag in flags]
+            + [flag + '_lowered' for flag in flags]
+            + [flag + '_raised_again' for flag in flags]
+        ))
 
         countries = self.data_provider.gsi_table['countrycode'].unique()
         for country in tqdm(countries, desc='Processing Gov Response Panel Data'):
@@ -97,12 +95,8 @@ class Correlations:
                 continue
             data['max_si'] = country_series['stringency_index'].max()
             data['date_max_si'] = country_series[country_series['stringency_index'] == data['max_si']]['date'].iloc[0]
-            population = np.nan if \
-                len(self.data_provider.wbi_table[
-                        self.data_provider.wbi_table['countrycode'] == country]['value']) == 0 else \
-                self.data_provider.wbi_table[self.data_provider.wbi_table['countrycode'] == country]['value'].iloc[0]
-            t0 = np.nan if len(self.epi_panel[self.epi_panel['countrycode'] == country]['t0_10_dead']) == 0 \
-                else self.epi_panel[self.epi_panel['countrycode'] == country]['t0_10_dead'].iloc[0]
+            t0 = (np.nan if len(self.epi_panel[self.epi_panel['countrycode'] == country]['t0_10_dead']) == 0
+                  else self.epi_panel[self.epi_panel['countrycode'] == country]['t0_10_dead'].iloc[0])
             data['si_days_to_max_si'] = np.nan if pd.isnull(t0) else (data['date_max_si'] - t0).days
             data['si_days_above_threshold'] = sum(country_series['stringency_index'] >= SI_THRESHOLD)
             data['si_integral'] = np.trapz(y=country_series['stringency_index'].dropna(),
@@ -131,16 +125,17 @@ class Correlations:
                     data['si_at_t0'] = country_series.loc[country_series['date'] == t0, 'stringency_index'].values[0]
                     # days taken to reach threshold
                     data['si_days_to_threshold'] = (
-                            min(country_series.loc[
-                                    country_series['stringency_index'] >= SI_THRESHOLD, 'date']) - t0).days \
-                        if sum(country_series['stringency_index'] >= SI_THRESHOLD) > 0 else np.nan
+                        (min(country_series.loc[country_series['stringency_index'] >= SI_THRESHOLD, 'date']) - t0).days
+                        if sum(country_series['stringency_index'] >= SI_THRESHOLD) > 0
+                        else np.nan)
                     for flag in flags:
                         data[flag + '_at_t0'] = country_series.loc[country_series['date'] == t0, flag].values[0]
-                        data[flag + '_days_to_threshold'] = (min(
-                            country_series.loc[country_series[flag] >= flag_thresholds[flag], 'date']) - t0).days \
-                            if sum(country_series[flag] >= flag_thresholds[flag]) > 0 else np.nan
-                if not (pd.isnull(date_peak_1) or pd.isnull(first_wave_start) or pd.isnull(first_wave_end)) \
-                        and date_peak_1 in country_series['date']:
+                        data[flag + '_days_to_threshold'] = (
+                            (min(country_series.loc[country_series[flag] >= flag_thresholds[flag], 'date']) - t0).days
+                            if sum(country_series[flag] >= flag_thresholds[flag]) > 0
+                            else np.nan)
+                if (not (pd.isnull(date_peak_1) or pd.isnull(first_wave_start) or pd.isnull(first_wave_end))
+                        and date_peak_1 in country_series['date']):
                     # SI value at peak date
                     data['si_at_peak_1'] = country_series.loc[
                         country_series['date'] == date_peak_1, 'stringency_index'].values[0]
@@ -230,21 +225,25 @@ class Correlations:
             if data['class'] >= 1:
                 # First wave
                 data['wave'] = 1
-                data['wave_start'] = \
-                    self.epi_panel.loc[self.epi_panel['countrycode'] == country, 'wave_start_1'].values[0]
+                data['wave_start'] = self.epi_panel.loc[
+                    self.epi_panel['countrycode'] == country, 'wave_start_1'].values[0]
                 data['wave_end'] = self._handle_wave_end(country, 1)
-                data['t0_10_dead'] = \
-                    self.epi_panel.loc[self.epi_panel['countrycode'] == country, 't0_10_dead'].values[0]
-                data['dead_during_wave'] = \
-                    dead[(dead['date'] >= self.epi_panel.loc[
-                        self.epi_panel['countrycode'] == country, 'wave_start_1'].values[0]) &
-                         (dead['date'] <= self.epi_panel.loc[
-                             self.epi_panel['countrycode'] == country, 'wave_end_1'].values[0])]['dead_per_day'].sum()
-                data['tests_during_wave'] = \
-                    tests[(tests['date'] >= self.epi_panel.loc[
-                        self.epi_panel['countrycode'] == country, 'wave_start_1'].values[0]) &
-                          (tests['date'] <= self.epi_panel.loc[
-                              self.epi_panel['countrycode'] == country, 'wave_end_1'].values[0])]['new_tests'].sum()
+                data['t0_10_dead'] = self.epi_panel.loc[
+                    self.epi_panel['countrycode'] == country, 't0_10_dead'].values[0]
+                data['dead_during_wave'] = (
+                    dead[
+                        (dead['date'] >=
+                         self.epi_panel.loc[self.epi_panel['countrycode'] == country, 'wave_start_1'].values[0]) &
+                        (dead['date'] <=
+                         self.epi_panel.loc[self.epi_panel['countrycode'] == country, 'wave_end_1'].values[0])
+                    ]['dead_per_day'].sum())
+                data['tests_during_wave'] = (
+                    tests[
+                        (tests['date'] >=
+                         self.epi_panel.loc[self.epi_panel['countrycode'] == country, 'wave_start_1'].values[0]) &
+                        (tests['date'] <=
+                         self.epi_panel.loc[self.epi_panel['countrycode'] == country, 'wave_end_1'].values[0])
+                    ]['new_tests'].sum())
 
                 # if tests during first wave is na due to missing data, linear interpolate low test numbers
                 if pd.isnull(data['tests_during_wave']):
@@ -252,17 +251,17 @@ class Correlations:
                     if not pd.isnull(data['wave_start']) and not np.all(pd.isnull(country_series['tests'])):
                         min_date = min(country_series['date'])
                         min_tests = np.nanmin(country_series['tests'])
-                        if pd.isnull(country_series.loc[country_series['date'] == min_date, 'tests'].values[0]) \
-                                and min_tests <= 1000:
+                        if (pd.isnull(country_series.loc[country_series['date'] == min_date, 'tests'].values[0]) and
+                                min_tests <= 1000):
                             country_series.loc[country_series['date'] == min_date, 'tests'] = 0
                             country_series['tests'] = country_series['tests'].interpolate(method='linear')
-                        if not pd.isnull(
-                                country_series.loc[country_series['date'] == data['wave_start'], 'tests'].values[
-                                    0]) and not pd.isnull(
-                            country_series.loc[country_series['date'] == data['wave_end'], 'tests'].values[0]):
-                            data['tests_during_wave'] = \
-                                country_series.loc[country_series['date'] == data['wave_end'], 'tests'].values[0] - \
-                                country_series.loc[country_series['date'] == data['wave_start'], 'tests'].values[0]
+                        if (not pd.isnull(country_series.loc[country_series['date'] == data['wave_start'], 'tests']
+                                                  .values[0])
+                            and not pd.isnull(country_series.loc[country_series['date'] == data['wave_end'], 'tests']
+                                                      .values[0])):
+                            data['tests_during_wave'] = (
+                                    country_series.loc[country_series['date'] == data['wave_end'], 'tests'].values[0] -
+                                    country_series.loc[country_series['date'] == data['wave_start'], 'tests'].values[0])
 
                 si_series = self.data_provider.gsi_table.loc[
                     (self.data_provider.gsi_table['countrycode'] == country) &
@@ -272,10 +271,14 @@ class Correlations:
                 if len(si_series) == 0:
                     data['si_integral_during_wave'] = np.nan
                 else:
-                    data['si_integral_during_wave'] = np.trapz(y=si_series['stringency_index'].dropna(),
-                                                               x=[(a - si_series['date'].values[0]).days for a in
-                                                                  si_series['date'][~np.isnan(
-                                                                      si_series['stringency_index'])]])
+                    data['si_integral_during_wave'] = np.trapz(
+                        y=si_series['stringency_index'].dropna(),
+                        x=[
+                            (a - si_series['date'].values[0]).days
+                            for a in
+                            si_series['date'][~np.isnan(si_series['stringency_index'])]
+                        ]
+                    )
                 wave_level = wave_level.append(data, ignore_index=True)
 
                 if data['class'] >= 3:
@@ -286,23 +289,23 @@ class Correlations:
                     data['t0_10_dead'] = np.nan
                     data['wave_start'] = self._handle_wave_start(country, 2)
                     data['wave_end'] = self._handle_wave_end(country, 2)
-                    data['dead_during_wave'] = \
-                        dead[(dead['date'] >= self.epi_panel.loc[
-                            self.epi_panel['countrycode'] == country, 'wave_start_2'].values[0]) &
-                             (dead['date'] <= self.epi_panel.loc[
-                                 self.epi_panel['countrycode'] == country, 'wave_end_2'].values[0])][
-                            'dead_per_day'].sum()
-                    data['tests_during_wave'] = \
-                        tests[(tests['date'] >= self.epi_panel.loc[
-                            self.epi_panel['countrycode'] == country, 'wave_start_2'].values[0]) &
-                              (tests['date'] <= self.epi_panel.loc[
-                                  self.epi_panel['countrycode'] == country, 'wave_end_2'].values[0])]['new_tests'].sum()
+                    data['dead_during_wave'] = (
+                        dead[(dead['date'] >=
+                              self.epi_panel.loc[self.epi_panel['countrycode'] == country, 'wave_start_2'].values[0]) &
+                             (dead['date'] <=
+                              self.epi_panel.loc[self.epi_panel['countrycode'] == country, 'wave_end_2'].values[0])
+                        ]['dead_per_day'].sum())
+                    data['tests_during_wave'] = (
+                        tests[(tests['date'] >=
+                               self.epi_panel.loc[self.epi_panel['countrycode'] == country, 'wave_start_2'].values[0]) &
+                              (tests['date'] <=
+                               self.epi_panel.loc[self.epi_panel['countrycode'] == country, 'wave_end_2'].values[0])
+                        ]['new_tests'].sum())
 
                     dead_at_start = country_series.loc[country_series['date'] == data['wave_start'], 'dead'].values[0]
-                    data['t0_10_dead'] = country_series.loc[(country_series['date'] > data['wave_start']) & \
-                                                            (country_series['date'] <= data['wave_end']) & \
-                                                            (country_series['dead'] >= dead_at_start + 10), \
-                                                            'date']
+                    data['t0_10_dead'] = (country_series.loc[(country_series['date'] > data['wave_start'])
+                                                             & (country_series['date'] <= data['wave_end'])
+                                                             & (country_series['dead'] >= dead_at_start + 10), 'date'])
                     if len(data['t0_10_dead']) > 0:
                         data['t0_10_dead'] = data['t0_10_dead'].values[0]
                     else:
@@ -314,10 +317,11 @@ class Correlations:
                     if len(si_series) == 0:
                         data['si_integral_during_wave'] = np.nan
                     else:
-                        data['si_integral_during_wave'] = np.trapz(y=si_series['stringency_index'].dropna(),
-                                                                   x=[(a - si_series['date'].values[0]).days for a in
-                                                                      si_series['date'][
-                                                                          ~np.isnan(si_series['stringency_index'])]])
+                        data['si_integral_during_wave'] = np.trapz(
+                            y=si_series['stringency_index'].dropna(),
+                            x=[(a - si_series['date'].values[0]).days
+                               for a in
+                               si_series['date'][~np.isnan(si_series['stringency_index'])]])
                     wave_level = wave_level.append(data, ignore_index=True)
 
                     if data['class'] >= 5:
@@ -326,26 +330,28 @@ class Correlations:
                         data['t0_10_dead'] = np.nan
                         data['wave_start'] = self._handle_wave_start(country, 3)
                         data['wave_end'] = self._handle_wave_end(country, 3)
-                        data['dead_during_wave'] = \
-                            dead[(dead['date'] >= self.epi_panel.loc[
-                                self.epi_panel['countrycode'] == country, 'wave_start_3'].values[0]) &
-                                 (dead['date'] <= self.epi_panel.loc[
-                                     self.epi_panel['countrycode'] == country, 'wave_end_3'].values[0])][
-                                'dead_per_day'].sum()
+                        data['dead_during_wave'] = (
+                            dead[
+                                (dead['date'] >=
+                                 self.epi_panel.loc[self.epi_panel['countrycode'] == country, 'wave_start_3'].values[0])
+                                & (dead['date'] <=
+                                   self.epi_panel.loc[self.epi_panel['countrycode'] == country, 'wave_end_3'].values[0])
+                            ]['dead_per_day'].sum())
 
-                        data['tests_during_wave'] = \
-                            tests[(tests['date'] >= self.epi_panel.loc[
-                                self.epi_panel['countrycode'] == country, 'wave_start_3'].values[0]) &
-                                  (tests['date'] <= self.epi_panel.loc[
-                                      self.epi_panel['countrycode'] == country, 'wave_end_3'].values[0])][
-                                'new_tests'].sum()
+                        data['tests_during_wave'] = (
+                            tests[
+                                (tests['date'] >=
+                                 self.epi_panel.loc[self.epi_panel['countrycode'] == country, 'wave_start_3'].values[0])
+                                & (tests['date'] <=
+                                   self.epi_panel.loc[self.epi_panel['countrycode'] == country, 'wave_end_3'].values[0])
+                            ]['new_tests'].sum())
 
                         dead_at_start = country_series.loc[
                             country_series['date'] == data['wave_start'], 'dead'].values[0]
-                        data['t0_10_dead'] = country_series.loc[(country_series['date'] > data['wave_start']) & \
-                                                                (country_series['date'] <= data['wave_end']) & \
-                                                                (country_series['dead'] >= dead_at_start + 10), \
-                                                                'date']
+                        data['t0_10_dead'] = (country_series.loc[
+                            (country_series['date'] > data['wave_start'])
+                            & (country_series['date'] <= data['wave_end'])
+                            & (country_series['dead'] >= dead_at_start + 10), 'date'])
                         if len(data['t0_10_dead']) > 0:
                             data['t0_10_dead'] = data['t0_10_dead'].values[0]
                         else:
@@ -357,11 +363,11 @@ class Correlations:
                         if len(si_series) == 0:
                             data['si_integral_during_wave'] = np.nan
                         else:
-                            data['si_integral_during_wave'] = np.trapz(y=si_series['stringency_index'].dropna(),
-                                                                       x=[(a - si_series['date'].values[0]).days for a
-                                                                          in si_series['date'][
-                                                                              ~np.isnan(
-                                                                                  si_series['stringency_index'])]])
+                            data['si_integral_during_wave'] = np.trapz(
+                                y=si_series['stringency_index'].dropna(),
+                                x=[(a - si_series['date'].values[0]).days
+                                   for a in
+                                   si_series['date'][~np.isnan(si_series['stringency_index'])]])
                         wave_level = wave_level.append(data, ignore_index=True)
 
         class_coarse = {
@@ -410,32 +416,29 @@ class Correlations:
                     data.loc[data['countrycode'] == country, 'first_date_' + flag[0:2] + '_above_threshold'] = min(
                         gov_country_series.loc[gov_country_series[flag] >= flag_thresholds[flag], 'date'])
                     if not pd.isnull(data.loc[data['countrycode'] == country, 't0_10_dead']).values[0]:
-                        data.loc[data['countrycode'] == country, flag[0:2] + '_response_time'] = (data.loc[data[
-                                                                                                               'countrycode'] == country, 'first_date_' + flag[
-                                                                                                                                                          0:2] + '_above_threshold'].values[
-                                                                                                      0] - data.loc[
-                                                                                                      data[
-                                                                                                          'countrycode'] == country, 't0_10_dead'].values[
-                                                                                                      0]).days
+                        data.loc[data['countrycode'] == country, flag[0:2] + '_response_time'] = (
+                            (data.loc[data['countrycode'] == country,
+                                      'first_date_' + flag[0:2] + '_above_threshold'].values[0]
+                             - data.loc[data['countrycode'] == country, 't0_10_dead'].values[0]).days)
             for t in TESTS_THRESHOLD:
                 tests_threshold_pop = t * data.loc[data['countrycode'] == country, 'population'].values[0] / 10000
                 if sum(country_series['tests'] >= tests_threshold_pop) > 0:
                     data.loc[data['countrycode'] == country, 'first_date_tests_above_threshold_' + str(t)] = min(
                         country_series.loc[country_series['tests'] >= tests_threshold_pop, 'date'])
                     if not pd.isnull(data.loc[data['countrycode'] == country, 't0_10_dead']).values[0]:
-                        data.loc[data['countrycode'] == country, 'testing_response_time_' + str(t)] = \
-                            (data.loc[data[
-                                          'countrycode'] == country, 'first_date_tests_above_threshold_' + str(
-                                t)].values[0] - data.loc[data['countrycode'] == country, 't0_10_dead'].values[0]).days
+                        data.loc[data['countrycode'] == country, 'testing_response_time_' + str(t)] = (
+                            (data.loc[data['countrycode'] == country,
+                                      'first_date_tests_above_threshold_' + str(t)].values[0]
+                             - data.loc[data['countrycode'] == country, 't0_10_dead'].values[0]).days)
 
         all_data = wave_level.merge(
             data[['countrycode', 'class_coarse', 'si_integral', 'last_dead_per_10k', 'last_tests_per_10k',
-                  'si_response_time',
-                  'c1_response_time', 'c2_response_time', 'c3_response_time', 'c4_response_time', 'c5_response_time',
-                  'c6_response_time',
-                  'c7_response_time', 'c8_response_time', 'h2_response_time', 'h3_response_time'] + [
-                     'testing_response_time_' + str(t) for t in TESTS_THRESHOLD]]
-            , on='countrycode', how='left')
+                  'si_response_time', 'c1_response_time', 'c2_response_time', 'c3_response_time', 'c4_response_time',
+                  'c5_response_time', 'c6_response_time', 'c7_response_time', 'c8_response_time', 'h2_response_time',
+                  'h3_response_time']
+                 + ['testing_response_time_' + str(t) for t in TESTS_THRESHOLD]],
+            on='countrycode',
+            how='left')
 
         all_data.to_csv(os.path.join(self.data_dir, 'correlations.csv'))
         return

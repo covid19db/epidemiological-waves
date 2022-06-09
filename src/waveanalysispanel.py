@@ -30,7 +30,6 @@ class WaveAnalysisPanel:
 
     # waiting implementation
     def get_epi_panel(self):
-        print('Preparing Epidemiological Results Table')
         epidemiology_panel = pd.DataFrame()
         # wave parameters marked a w
         for country in tqdm(np.sort(self.data_provider.epidemiology_series['countrycode'].unique()),
@@ -94,25 +93,28 @@ class WaveAnalysisPanel:
                 y=gsi_series['stringency_index'].dropna(),
                 x=[(a - gsi_series['date'].values[0]).days
                    for a in gsi_series['date'][~np.isnan(gsi_series['stringency_index'])]])
-            data['t0'] = np.nan if len(
-                country_series[country_series['confirmed'] >= self.config.abs_t0_threshold]['date']) == 0 else \
-                country_series[country_series['confirmed'] >= self.config.abs_t0_threshold]['date'].iloc[0]
-            data['t0_relative'] = np.nan if len(
-                country_series[((country_series['confirmed'] /
-                                 data[
-                                     'population']) * self.config.rel_to_constant >= self.config.rel_t0_threshold)][
-                    'date']) == 0 else \
-                country_series[((country_series['confirmed'] /
-                                 data[
-                                     'population']) * self.config.rel_to_constant >= self.config.rel_t0_threshold)][
-                    'date'].iloc[
-                    0]
-            data['t0_1_dead'] = np.nan if len(country_series[country_series['dead'] >= 1]['date']) == 0 else \
-                country_series[country_series['dead'] >= 1]['date'].iloc[0]
-            data['t0_5_dead'] = np.nan if len(country_series[country_series['dead'] >= 5]['date']) == 0 else \
-                country_series[country_series['dead'] >= 5]['date'].iloc[0]
-            data['t0_10_dead'] = np.nan if len(country_series[country_series['dead'] >= 10]['date']) == 0 else \
-                country_series[country_series['dead'] >= 10]['date'].iloc[0]
+            data['t0'] = (np.nan
+                          if len(country_series[country_series['confirmed']
+                                                >= self.config.abs_t0_threshold]['date']) == 0
+                          else
+                          country_series[country_series['confirmed'] >= self.config.abs_t0_threshold]['date'].iloc[0])
+            data['t0_relative'] = (np.nan
+                                   if
+                                   len(country_series[
+                                           ((country_series['confirmed'] / data['population'])
+                                            * self.config.rel_to_constant >= self.config.rel_t0_threshold)
+                                       ]['date']) == 0
+                                   else
+                                   country_series[
+                                       ((country_series['confirmed'] / data['population'])
+                                        * self.config.rel_to_constant >= self.config.rel_t0_threshold)
+                                   ]['date'].iloc[0])
+            data['t0_1_dead'] = (np.nan if len(country_series[country_series['dead'] >= 1]['date']) == 0
+                                 else country_series[country_series['dead'] >= 1]['date'].iloc[0])
+            data['t0_5_dead'] = (np.nan if len(country_series[country_series['dead'] >= 5]['date']) == 0
+                                 else country_series[country_series['dead'] >= 5]['date'].iloc[0])
+            data['t0_10_dead'] = (np.nan if len(country_series[country_series['dead'] >= 10]['date']) == 0
+                                  else country_series[country_series['dead'] >= 10]['date'].iloc[0])
             data['testing_available'] = True if len(country_series['new_tests'].dropna()) > 0 else False
             # if t0 not defined all other metrics make no sense
             if pd.isnull(data['t0_10_dead']):
@@ -142,17 +144,19 @@ class WaveAnalysisPanel:
                 pass
             '''
             if (len(gsi_series) > 0) and (len(gsi_series[gsi_series['c3_cancel_public_events'] == 2]) > 0):
-                data['stringency_response_time'] = \
-                    (gsi_series[gsi_series['c3_cancel_public_events'] == 2]['date'].iloc[0] - data[
-                        't0_10_dead']).days
+                data['stringency_response_time'] = (
+                    (gsi_series[gsi_series['c3_cancel_public_events'] == 2]['date'].iloc[0] - data['t0_10_dead']).days)
 
             if data['testing_available']:
-                data['testing_response_time'] = np.nan if \
-                    len(testing_series[(testing_series['total_tests'] / data['population']) *
-                                       data['rel_to_constant'] >= 10]) == 0 \
-                    else \
-                    (testing_series[(testing_series['total_tests'] / data['population']) *
-                                    data['rel_to_constant'] >= 10]['date'].iloc[0] - data['t0_1_dead']).days
+                data['testing_response_time'] = (np.nan
+                                                 if len(testing_series[
+                                                            (testing_series['total_tests'] / data['population'])
+                                                            * data['rel_to_constant'] >= 10
+                                                        ]) == 0
+                                                 else (testing_series[
+                                                           (testing_series['total_tests'] / data['population'])
+                                                           * data['rel_to_constant'] >= 10
+                                                       ]['date'].iloc[0] - data['t0_1_dead']).days)
 
             # for each wave we add characteristics
             if (type(peaks_and_troughs) == list) and len(peaks_and_troughs) > 0:
@@ -165,14 +169,13 @@ class WaveAnalysisPanel:
                     i = int((peak['index'] + 2) / 2)
                     # data relating to the peak
                     data['peak_{}'.format(str(i))] = peak['y_position']
-                    data['peak_{}_per_rel_to'.format(str(i))] = \
-                        (peak['y_position'] / data['population']) * data['rel_to_constant']
+                    data['peak_{}_per_rel_to'.format(str(i))] = ((peak['y_position'] / data['population'])
+                                                                 * data['rel_to_constant'])
                     data['date_peak_{}'.format(str(i))] = peak['date']
                     # find preceding and following troughs
                     if i == 1:
-                        wave_start = np.nan if len(country_series[country_series['confirmed'] >= 1]['date']) == 0 \
-                            else \
-                            country_series[country_series['confirmed'] >= 1]['date'].iloc[0]
+                        wave_start = (np.nan if len(country_series[country_series['confirmed'] >= 1]['date']) == 0
+                                      else country_series[country_series['confirmed'] >= 1]['date'].iloc[0])
                         data['wave_start_{}'.format(str(i))] = wave_start
                     for trough in peaks_and_troughs:
                         if trough['index'] == peak['index'] - 1:
@@ -181,22 +184,21 @@ class WaveAnalysisPanel:
                             data['wave_end_{}'.format(str(i))] = trough['date']
                             end_of_wave_found = True
                     if not end_of_wave_found:
-                        wave_end = np.nan if len(country_series[country_series['confirmed'] >= 1]['date']) == 0 \
-                            else \
-                            country_series[country_series['confirmed'] >= 1]['date'].iloc[-1]
+                        wave_end = (np.nan if len(country_series[country_series['confirmed'] >= 1]['date']) == 0
+                                    else country_series[country_series['confirmed'] >= 1]['date'].iloc[-1])
                         data['wave_end_{}'.format(str(i))] = wave_end
                     # calculate information relating to the wave
                     data['wave_duration_{}'.format(str(i))] = (data['wave_end_{}'.format(str(i))] -
                                                                data['wave_start_{}'.format(str(i))]).days
-                    data['wave_cfr_{}'.format(str(i))] = \
-                        (country_series[country_series['date'] ==
-                                        data['wave_end_{}'.format(str(i))]]['dead'].iloc[0] -
-                         country_series[country_series['date'] ==
-                                        data['wave_start_{}'.format(str(i))]]['dead'].iloc[0]) / \
-                        (country_series[country_series['date'] ==
-                                        data['wave_end_{}'.format(str(i))]]['confirmed'].iloc[0] -
-                         country_series[country_series['date'] ==
-                                        data['wave_start_{}'.format(str(i))]]['confirmed'].iloc[0])
+                    data['wave_cfr_{}'.format(str(i))] = (
+                        (country_series[country_series['date'] == data['wave_end_{}'.format(str(i))]]
+                         ['dead'].iloc[0]
+                         - country_series[country_series['date'] == data['wave_start_{}'.format(str(i))]]
+                         ['dead'].iloc[0])
+                        / (country_series[country_series['date'] == data['wave_end_{}'.format(str(i))]]
+                           ['confirmed'].iloc[0]
+                           - country_series[country_series['date'] == data['wave_start_{}'.format(str(i))]]
+                           ['confirmed'].iloc[0]))
                     continue
             epidemiology_panel = epidemiology_panel.append(data, ignore_index=True)
             continue

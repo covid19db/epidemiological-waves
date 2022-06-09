@@ -16,14 +16,13 @@ from epidemicwaveclassifier import EpidemicWaveClassifier
 
 class Figures:
     def __init__(self, config: Config, epi_panel: pd.core.frame.DataFrame,
-                 data_provider: DataProvider, epi_classifier: EpidemicWaveClassifier ):
+                 data_provider: DataProvider, epi_classifier: EpidemicWaveClassifier):
         self.data_dir = config.manuscript_figures_data_path
         self.config = config
         self.data_provider = data_provider
         self.epi_panel = epi_panel
         self.epi_classifier = epi_classifier
         return
-
 
     def _initialise_postgres(self):
         conn = psycopg2.connect(
@@ -35,7 +34,7 @@ class Figures:
         conn.cursor()
         return conn
 
-    def _figure_1(self, start_date=datetime.date(2019,12,31)):
+    def _figure_1(self, start_date=datetime.date(2019, 12, 31)):
         print("Preparing data for Figure 1")
         # query map data (serialising issues in format so not caching)
         # hence the use of the semi-colon delimiter later
@@ -44,7 +43,12 @@ class Figures:
         map_data = gpd.GeoDataFrame.from_postgis(sql_command, conn, geom_col='geometry')
         # get figure 1a
         figure_1a = self.data_provider.epidemiology_series[
-            ['countrycode', 'date', 'new_per_day', 'new_cases_per_rel_constant', 'dead_per_day', 'new_deaths_per_rel_constant']]
+            ['countrycode',
+             'date',
+             'new_per_day',
+             'new_cases_per_rel_constant',
+             'dead_per_day',
+             'new_deaths_per_rel_constant']]
         # get figure 1b
         figure_1b = self.epi_panel[['countrycode', 't0_10_dead', 'class', 'class_coarse', 'population']].merge(
             self.data_provider.wbi_table[['countrycode', 'gni_per_capita']], on=['countrycode'], how='left')
@@ -55,10 +59,15 @@ class Figures:
         figure_1b.astype({'geometry': str}).to_csv(os.path.join(self.data_dir, 'figure_1b.csv'), sep=';')
 
         # panel A
-        panel_a = self.data_provider.epidemiology_series[
-            ['countrycode', 'date', 'days_since_t0_10_dead', 'new_cases_per_rel_constant', 'new_deaths_per_rel_constant']].merge(
-            self.epi_panel[['countrycode', 't0_10_dead', 'class', 'population']], on=['countrycode'], how='left').merge(
-            self.data_provider.wbi_table[['countrycode', 'gni_per_capita']], on=['countrycode'], how='left')
+        panel_a = (self.data_provider.epidemiology_series[['countrycode',
+                                                           'date',
+                                                           'days_since_t0_10_dead',
+                                                           'new_cases_per_rel_constant',
+                                                           'new_deaths_per_rel_constant']]
+                   .merge(self.epi_panel[['countrycode', 't0_10_dead', 'class', 'population']], on=['countrycode'],
+                          how='left')
+                   .merge(self.data_provider.wbi_table[['countrycode', 'gni_per_capita']], on=['countrycode'],
+                          how='left'))
         panel_a = panel_a[panel_a['class'] >= 3]
         # cases
         cases = panel_a[['date', 'countrycode', 'new_cases_per_rel_constant']].groupby('date').agg(
@@ -87,7 +96,9 @@ class Figures:
         cmap = plt.get_cmap('viridis', int(figure_1b['class'].max() - figure_1b['class'].min() + 1))
         fig, ax = plt.subplots(nrows=1, ncols=1)
         ax.set_axis_off()
-        panel_c.plot(column='days_to_t0_10_dead', linewidth=0.5, edgecolor='0.5',
+        panel_c.plot(column='days_to_t0_10_dead',
+                     linewidth=0.5,
+                     edgecolor='0.5',
                      legend_kwds={'orientation': 'horizontal', 'label': 'Days to T0'},
                      figsize=(20, 7), legend=True,
                      missing_kwds={"color": "lightgrey", "edgecolor": "black"})
@@ -97,7 +108,7 @@ class Figures:
 
     def _figure_5(self):
         print("Preparing data for Figure 5")
-        countries = ['ITA', 'FRA', 'USA', 'ZMB','GBR','GHA','CRI']
+        countries = ['ITA', 'FRA', 'USA', 'ZMB', 'GBR', 'GHA', 'CRI']
         figure_5 = self.data_provider.epidemiology_series.loc[
             self.data_provider.epidemiology_series['countrycode'].isin(countries),
             ['country', 'countrycode', 'date', 'new_per_day', 'new_per_day_smooth',
@@ -107,7 +118,7 @@ class Figures:
         return
 
     def _figure_6(self):
-        print("Preparing data for Figure 6")
+        print("Downloading data for Figure 6")
         CUTOFF_DATE = datetime.date(2021, 7, 1)
         conn = self._initialise_postgres()
         sql_command = """SELECT * FROM administrative_division WHERE countrycode='USA'"""
@@ -131,19 +142,23 @@ class Figures:
                                       'src/plugins/USA_NYT/translation.csv')
 
         figure_6 = usa_cases.merge(translation_csv[['input_adm_area_1', 'input_adm_area_2', 'gid']],
-                                   left_on=['state', 'county'], right_on=['input_adm_area_1', 'input_adm_area_2'],
-                                   how='left').merge(
-            usa_populations[['FIPS', 'Population']], left_on=['fips'], right_on=['FIPS'], how='left')
+                                   left_on=['state', 'county'],
+                                   right_on=['input_adm_area_1', 'input_adm_area_2'],
+                                   how='left'
+                                   ).merge(usa_populations[['FIPS', 'Population']],
+                                           left_on=['fips'],
+                                           right_on=['FIPS'],
+                                           how='left')
 
-        figure_6 = figure_6[['date', 'gid', 'fips', 'cases', 'new_cases', 'Population']].sort_values(
-            by=['gid', 'date']).dropna(
-            subset=['gid'])
+        figure_6 = (figure_6[['date', 'gid', 'fips', 'cases', 'new_cases', 'Population']]
+                    .sort_values(by=['gid', 'date'])
+                    .dropna(subset=['gid']))
         figure_6 = usa_map[['gid', 'geometry']].merge(figure_6, on=['gid'], how='right')
         figure_6.astype({'geometry': str}).to_csv(os.path.join(self.data_dir, 'figure_6.csv'), sep=';')
 
         cols = 'countrycode, adm_area_1, date, confirmed'
-        sql_command = """SELECT """ + cols + \
-                      """ FROM epidemiology WHERE countrycode = 'USA' AND source = 'USA_NYT' AND adm_area_1 IS NOT NULL AND adm_area_2 IS NULL"""
+        sql_command = f"""SELECT {cols} FROM epidemiology WHERE countrycode = 'USA' AND source = 'USA_NYT' AND 
+        adm_area_1 IS NOT NULL AND adm_area_2 IS NULL"""
         raw_usa = pd.read_sql(sql_command, conn)
         raw_usa = raw_usa.sort_values(by=['adm_area_1', 'date']).reset_index(drop=True)
         raw_usa = raw_usa[raw_usa['date'] <= CUTOFF_DATE].reset_index(drop=True)
@@ -169,7 +184,8 @@ class Figures:
             continue
         pd.options.mode.chained_assignment = 'warn'
 
-        sql_command = """SELECT adm_area_1, latitude, longitude FROM administrative_division WHERE adm_level=1 AND countrycode='USA'"""
+        sql_command = """SELECT adm_area_1, latitude, longitude FROM administrative_division WHERE adm_level=1 AND 
+        countrycode='USA'"""
         states_lat_long = pd.read_sql(sql_command, conn)
         figure_6a = figure_6a.merge(states_lat_long, on='adm_area_1')
         figure_6a.to_csv(os.path.join(self.data_dir, 'figure_6a.csv'), sep=',')
