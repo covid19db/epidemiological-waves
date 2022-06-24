@@ -49,7 +49,7 @@ class WaveList:
     """
 
     def __init__(self, raw_data: Series, series_name: str,
-                 t_sep_a: int, prominence_threshold: float, prominence_height_threshold: float):
+                 t_sep_a: int, prominence_threshold: float, proportional_prominence_threshold: float):
         """
         Creates the WaveList object and calls run to find the waves using the set parameters
 
@@ -69,7 +69,7 @@ class WaveList:
         # configuration parameters
         self.t_sep_a = t_sep_a
         self.prominence_threshold = prominence_threshold
-        self.prominence_height_threshold = prominence_height_threshold
+        self.proportional_prominence_threshold = proportional_prominence_threshold
 
         # peaks and troughs of waves are calculated by run()
         self.peaks_initial, self.peaks_sub_a, self.peaks_sub_b, self.peaks_sub_c = self.run()
@@ -103,7 +103,7 @@ class WaveList:
             raw_data=self.raw_data,
             input_data_df=peaks_sub_b,
             prominence_threshold=self.prominence_threshold,
-            proportional_prominence_threshold=self.prominence_height_threshold)
+            proportional_prominence_threshold=self.proportional_prominence_threshold)
 
         return peaks_initial, peaks_sub_a, peaks_sub_b, peaks_sub_c
 
@@ -128,7 +128,7 @@ class WaveList:
 
         # extract relevant data and parameters from the WaveList objects
         prominence_threshold = self.prominence_threshold
-        proportional_prominence_threshold = self.prominence_height_threshold
+        proportional_prominence_threshold = self.proportional_prominence_threshold
 
         input_data = self.raw_data
         input_sub_b = self.peaks_sub_b
