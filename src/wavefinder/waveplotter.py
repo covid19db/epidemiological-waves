@@ -84,12 +84,13 @@ def plot_peaks(wavelists: list, title: str, save: bool, plot_path: str):
             peaks_and_troughs = getattr(wavelist, column['source'])
             peaks = peaks_and_troughs[peaks_and_troughs['peak_ind'] == 1]['location'].values
             troughs = peaks_and_troughs[peaks_and_troughs['peak_ind'] == 0]['location'].values
-            axs[i, j].set_title(wavelist.series_name + column['desc'])
-            axs[i, j].plot(wavelist.raw_data.values, color='black', zorder=0)
-            axs[i, j].scatter(peaks, wavelist.raw_data.values[peaks.astype(int)], color='red', marker='o', zorder=2)
-            axs[i, j].scatter(troughs, wavelist.raw_data.values[troughs.astype(int)], color='cornflowerblue', marker='o', zorder=1)
-            axs[i, j].get_xaxis().set_visible(False)
-            axs[i, j].get_yaxis().set_visible(False)
+            subaxis = axs[j] if len(wavelists) == 1 else axs[i, j]
+            subaxis.set_title(wavelist.series_name + column['desc'])
+            subaxis.plot(wavelist.raw_data.values, color='black', zorder=0)
+            subaxis.scatter(peaks, wavelist.raw_data.values[peaks.astype(int)], color='red', marker='o', zorder=2)
+            subaxis.scatter(troughs, wavelist.raw_data.values[troughs.astype(int)], color='cornflowerblue', marker='o', zorder=1)
+            subaxis.get_xaxis().set_visible(False)
+            subaxis.get_yaxis().set_visible(False)
 
     fig.tight_layout()
 
